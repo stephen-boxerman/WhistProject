@@ -41,7 +41,7 @@ def bid(currentPlayer, dealer):
     if current_bid not in POSSIBLE_BIDS:
         raise Exception("Incorrect Bid")
     elif currentPlayer == dealer:
-        return current_bid
+        return [current_bid]
     else:
         status = bid(next_player(currentPlayer), dealer)
         build = [current_bid]
