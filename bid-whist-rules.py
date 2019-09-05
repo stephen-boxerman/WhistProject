@@ -1,8 +1,7 @@
 #--------------------------------------
 #Project:  Whist AI Project
 #Author1:  Stephen Boxerman
-#Author2:  Asher Gingritch
-#Date:     09/03/2019
+#Author2:  Asher Gingerich
 #--------------------------------------
 
 import math
@@ -136,7 +135,5 @@ def main():
         leadingPlayer, trump, restriction = getWinningBid(bids, dealer)
         play(leadingPlayer, trump, restriction)
         remove_files()
-
-    
 
 main()
