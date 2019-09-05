@@ -1,8 +1,8 @@
-#--------------------------------------
-#Project:  Whist AI Project
-#Author1:  Stephen Boxerman
-#Author2:  Asher Gingerich
-#--------------------------------------
+# --------------------------------------
+# Project:  Whist AI Project
+# Author1:  Stephen Boxerman
+# Author2:  Asher Gingerich
+# --------------------------------------
 
 import math
 import random
@@ -14,14 +14,25 @@ POSSIBLE_BIDS = {'p': -1, '1': 1, '1no': 2, '2': 3, '2no': 4, '3': 5, '3no': 6, 
                  '6': 11, '6no': 12, '7': 13, '7no': 14}
 CARD_VALUES = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K': 13, 'A':14}
 
+player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0},
+                {'h':0, 'd':0, 's':0, 'c':0}]
+
+
 def next_player(player):
     return (player + 1) % 4
+
 
 def remove_files():
     for i in range(4):
         fn = 'player' + str(i) + '.txt'
         if os.path.exists(fn):
             os.remove(fn)
+
+
+def get_card_suit(card):
+    suit = card[-1]
+    return suit
+
 
 def create_deck():
     deck = []
@@ -33,13 +44,20 @@ def create_deck():
             deck.append(card)
     return deck
 
+
 def deal(deck, dealer):
+    player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0},
+                {'h':0, 'd':0, 's':0, 'c':0}]
     random.shuffle(deck)
     
     currentPlayer = next_player(dealer)
     while len(deck) != 0:
-        players[currentPlayer].append(deck.pop())
+        card = deck.pop()
+        players[currentPlayer].append(card)
+        suit = get_card_suit(card)
+        player_suits[currentPlayer][suit] += 1
         currentPlayer = next_player(currentPlayer)
+
 
 def bid(currentPlayer, dealer):
 
@@ -54,6 +72,7 @@ def bid(currentPlayer, dealer):
         build = [current_bid]
         build.extend(status)
         return build
+
 
 def setup(dealer):
     while True:
@@ -80,6 +99,7 @@ def setup(dealer):
         if bids != ['p', 'p', 'p', 'p']:
             return bids
 
+
 def getWinningBid(bids, dealer):
 
     bidValues = []
@@ -90,10 +110,17 @@ def getWinningBid(bids, dealer):
     if bidValues[winningBid] % 2 == 0:
         trump = False
         restriction = input("High or low? (asc or desc) -> ")
+        while restriction not in ['asc', 'desc']:
+            print('Invalid.  Must enter asc or desc.')
+            restriction = input("High or low? (asc or desc) -> ")
     else:
         trump = True
         restriction = input("What's trump? (h, d, s, c) -> ")
-    return leadingPlayer, trump, restriction
+        while restriction not in ['h', 'd', 's', 'c']:
+            print('Invalid.  Must enter h, d, s, or c.')
+            restriction = input("What's trump? (h, d, s, c) -> ")
+    return leadingPlayer, restriction, winningBid
+
 
 def play_card(player):
     card = ''
@@ -102,28 +129,122 @@ def play_card(player):
         if card not in players[player]:
             print("You do not have that card in hand. Please play a legal card.")
         else:
-            card_index = players[player].index(card)
-            return players[player].pop(card_index)
+            return card
 
-def get_card_suit(card):
-    suit = card[-1]
-    return suit
 
-def play(leadingPlayer, trump, restriction):
-    print(leadingPlayer, trump, restriction)
+def has_suit(player, suit):
+    return player_suits[player][suit] != 0
+
+
+def remove_card(player, card):
+    card_index = players[player].index(card)
+    players[player].pop(card_index)
+
+
+def findSuit(played, suit, default = -1):
+    card_values = []
+    for card in played:
+        if get_card_suit(card) == suit:
+            value = CARD_VALUES[card[0]]
+            card_values.append(value)
+        else:
+            card_values.append(default)
+
+    return card_values
+
+
+def findWinningCard(playedCards, restriction, leadSuit):
+
+    if restriction == "desc":
+        values = findSuit(playedCards, leadSuit, 30)
+        winningCard = min(values)
+    elif restriction == "asc":
+        values = findSuit(playedCards, leadSuit)
+        winningCard = max(values)
+    else:
+        values = findSuit(playedCards, restriction)
+        if values == [-1, -1, -1, -1]:
+            values = findSuit(playedCards, leadSuit)
+            winningCard = max(values)
+
+        winningCard = max(values)
+
+    return values.index(winningCard)
+
+
+def play(leadingPlayer, restriction):
     for i in range(13):
+        team1 = [0,2]
+        team2 = [1,3]
+        team1Tricks = 0
+        team2Tricks = 0
         playedCards = []
-        playedCards.append(play_card(leadingPlayer))
 
+        card = play_card(leadingPlayer)
+        playedCards.append(card)
+        leadSuit = get_card_suit(card)
         current_player = next_player(leadingPlayer)
         for i in range(3):
             card = play_card(current_player)
             while get_card_suit(card) != get_card_suit(playedCards[0]):
-                print('You must follow suit.')
-                card = play_card(current_player)
+                if has_suit(current_player, get_card_suit(playedCards[0])):
+                    print('You must follow suit.')
+                    card = play_card(current_player)
+                else:
+                    break
+
             playedCards.append(card)
+            remove_card(current_player, card)
             current_player = next_player(current_player)
-        print(playedCards)
+
+        winningCard = findWinningCard(playedCards, restriction)
+
+        winningPLayer = (leadingPlayer + winningCard) % 4
+
+        if winningCard in team1:
+            team1Tricks += 1
+        else:
+            team2Tricks += 1
+
+
+def calcScores(team1Tricks, team2Tricks, winningBid, leadingPlayer, restriction):
+
+    if leadingPlayer in [0,2]:
+        team1Points = team1Tricks - 6
+        if restriction in ['asc', 'desc']
+            if team1Points >= int(winningBid[0]):
+                team1Score += team1Points * 2
+            else:
+                team1Score = team1Score - winningBid[0] * 2
+                team2Points = team2Tricks - 6
+                if team2Points > 0:
+                    team2Score += team2Points * 2
+        else:
+            if team1Points >= int(winningBid[0]):
+                team1Score += team1Points *
+            else:
+                team1Score = team1Score - winningBid[0]
+                team2Points = team2Tricks - 6
+                if team2Points > 0:
+                    team2Score += team2Points
+    else:
+        team2Points = team2Tricks - 6
+        if restriction in ['asc', 'desc']
+            if team2Points >= int(winningBid[0]):
+                team2Score += team2Points * 2
+            else:
+                team2Score = team2Score - winningBid[0] * 2
+                team1Points = team1Tricks - 6
+                if team1Points > 0:
+                    team1Score += team1Points * 2
+        else:
+            if team2Points >= int(winningBid[0]):
+                team2Score += team2Points *
+            else:
+                team2Score = team2Score - winningBid[0]
+                team1Points = team1Tricks - 6
+                if team1Points > 0:
+                    team1Score += team1Points
 
 
 def main():
@@ -132,8 +253,10 @@ def main():
     while True:
 
         bids = setup(dealer)
-        leadingPlayer, trump, restriction = getWinningBid(bids, dealer)
-        play(leadingPlayer, trump, restriction)
+        leadingPlayer, restriction, winningIndex = getWinningBid(bids, dealer)
+        winningBid = bids[winningIndex]
+        team1Tricks, team2Tricks = play(leadingPlayer, restriction)
+        team1Score team2Score = calcScores(team1Tricks, team2Tricks, winningBid, leadingPlayer, restriction)
         remove_files()
 
 main()
