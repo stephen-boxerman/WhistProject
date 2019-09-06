@@ -17,23 +17,24 @@ CARD_VALUES = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 
 player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0},
                 {'h':0, 'd':0, 's':0, 'c':0}]
 
-
+# a helper function to find the next player
 def next_player(player):
     return (player + 1) % 4
 
-
+# a helper function to remove the files we created
+# to hold the persons hand information
 def remove_files():
     for i in range(4):
         fn = 'player' + str(i) + '.txt'
         if os.path.exists(fn):
             os.remove(fn)
 
-
+# a helper function to retrieve the suit of a card
 def get_card_suit(card):
     suit = card[-1]
     return suit
 
-
+# a function to create a deck of 52 cards
 def create_deck():
     deck = []
     suits = ['h','d','s','c']
@@ -44,13 +45,19 @@ def create_deck():
             deck.append(card)
     return deck
 
-
+# a function to deal out the cards;
+# 13 per player, one at a time
 def deal(deck, dealer):
     player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0},
                 {'h':0, 'd':0, 's':0, 'c':0}]
+
+    #shuffle the deck
     random.shuffle(deck)
-    
+
+    #deals to the player to the left of the dealer first
     currentPlayer = next_player(dealer)
+
+    #main body of the function
     while len(deck) != 0:
         card = deck.pop()
         players[currentPlayer].append(card)
@@ -58,33 +65,43 @@ def deal(deck, dealer):
         player_suits[currentPlayer][suit] += 1
         currentPlayer = next_player(currentPlayer)
 
-
+# a recursive function to handle the bidding process
 def bid(currentPlayer, dealer):
 
+    #get the bid of the current player
     current_bid = input("player" + str(currentPlayer) + " bid: -> ")
-        
+
+    # logic to handle a faulty bid
     if current_bid not in POSSIBLE_BIDS:
         raise Exception("Incorrect Bid")
+    #base case
     elif currentPlayer == dealer:
         return [current_bid]
+    #recusive case
     else:
         status = bid(next_player(currentPlayer), dealer)
         build = [current_bid]
         build.extend(status)
         return build
 
-
+# a function that handles the setup of a round of Whist
 def setup(dealer):
+    # keeps looping till at least one player has made a bid other than pass
     while True:
+        #create deck
         deck = create_deck()
+        #deal cards
         deal(deck, dealer)
+        #right out each players hand to a file
         for i in range(4):
             fn = 'player' + str(i) + '.txt'
             file = open(fn, "x")
             file.write(str(players[i]))
             file.close()
-
+        # set currentPlayer to the player on the dealer left
         currentPlayer = next_player(dealer)
+
+        #loops through till all players have made a legal bid
         while True:
             try:
                 bids = bid(currentPlayer, dealer)
@@ -92,6 +109,7 @@ def setup(dealer):
                     print('All players passed.')
                     bids = bid(currentPlayer, dealer)
             except:
+                #need function to handle an incorrect bid
                 print("Incorrect Bid.  Please try again")
                 continue
             break
