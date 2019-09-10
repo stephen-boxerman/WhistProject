@@ -216,11 +216,13 @@ def play(leadingPlayer, restriction):
             remove_card(current_player, card)
             current_player = next_player(current_player)
 
-        winningCard = findWinningCard(playedCards, restriction)
+        winningCard = findWinningCard(playedCards, restriction, leadSuit)
 
         winningPlayer = (leadingPlayer + winningCard) % 4
+        print("Player " + str(winningPlayer) + " won the trick.\n")
 
         tricks[winningPlayer % 2] += 1
+        leadingPlayer = winningPlayer
 
     return tricks
 
@@ -232,7 +234,7 @@ def calcScores(tricks, winningBid, leadingPlayer, restriction):
 
     trickGoal = int(winningBid[0])
 
-    trickPotential[tricks[0]-6,tricks[1]-6]
+    trickPotential = [tricks[0]-6,tricks[1]-6]
 
     points = [0, 0]
 
@@ -250,6 +252,8 @@ def calcScores(tricks, winningBid, leadingPlayer, restriction):
 def main():
     remove_files()
     dealer = 0
+    team1Score = 0
+    team2Score = 0
     while True:
 
         bids = setup(dealer)
