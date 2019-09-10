@@ -194,8 +194,7 @@ def play(leadingPlayer, restriction):
     for i in range(13):
         team1 = [0,2]
         team2 = [1,3]
-        team1Tricks = 0
-        team2Tricks = 0
+        tricks = [0, 0]
         playedCards = []
 
         card = play_card(leadingPlayer)
@@ -217,52 +216,33 @@ def play(leadingPlayer, restriction):
 
         winningCard = findWinningCard(playedCards, restriction)
 
-        winningPLayer = (leadingPlayer + winningCard) % 4
+        winningPlayer = (leadingPlayer + winningCard) % 4
 
-        if winningCard in team1:
-            team1Tricks += 1
-        else:
-            team2Tricks += 1
+        tricks[winningPlayer % 2] += 1
+
+    return tricks
 
 
-def calcScores(team1Tricks, team2Tricks, winningBid, leadingPlayer, restriction):
+def calcScores(tricks, winningBid, leadingPlayer, restriction):
 
-    if leadingPlayer in [0,2]:
-        team1Points = team1Tricks - 6
-        if restriction in ['asc', 'desc']
-            if team1Points >= int(winningBid[0]):
-                team1Score += team1Points * 2
-            else:
-                team1Score = team1Score - winningBid[0] * 2
-                team2Points = team2Tricks - 6
-                if team2Points > 0:
-                    team2Score += team2Points * 2
-        else:
-            if team1Points >= int(winningBid[0]):
-                team1Score += team1Points *
-            else:
-                team1Score = team1Score - winningBid[0]
-                team2Points = team2Tricks - 6
-                if team2Points > 0:
-                    team2Score += team2Points
+    leadingTeam = leadingPlayer % 2 # leadingTeam[0] = player0, player2
+    nonLeadingTeam = leadingTeam+1%2
+
+    trickGoal = int(winningBid[0])
+
+    trickPotential[tricks[0]-6,tricks[1]-6]
+
+    points = [0, 0]
+
+    if trickPotential[leadingTeam] > trickGoal:
+        points[leadingTeam] += trickPotential[leadingTeam]
     else:
-        team2Points = team2Tricks - 6
-        if restriction in ['asc', 'desc']
-            if team2Points >= int(winningBid[0]):
-                team2Score += team2Points * 2
-            else:
-                team2Score = team2Score - winningBid[0] * 2
-                team1Points = team1Tricks - 6
-                if team1Points > 0:
-                    team1Score += team1Points * 2
-        else:
-            if team2Points >= int(winningBid[0]):
-                team2Score += team2Points *
-            else:
-                team2Score = team2Score - winningBid[0]
-                team1Points = team1Tricks - 6
-                if team1Points > 0:
-                    team1Score += team1Points
+        points[leadingTeam] -= trickGoal
+        if trickPotential[nonLeadingTeam] > 0:
+            points[nonLeadingTeam] += trickPotential[leadingTeam]
+    if restriction in ["asc", "desc"]:
+        points[leadingTeam] *= 2
+    return points
 
 
 def main():
@@ -273,8 +253,19 @@ def main():
         bids = setup(dealer)
         leadingPlayer, restriction, winningIndex = getWinningBid(bids, dealer)
         winningBid = bids[winningIndex]
-        team1Tricks, team2Tricks = play(leadingPlayer, restriction)
-        team1Score team2Score = calcScores(team1Tricks, team2Tricks, winningBid, leadingPlayer, restriction)
+        tricks = play(leadingPlayer, restriction)
+        points = calcScores(tricks, winningBid, leadingPlayer, restriction)
+        team1Score += points[0]
+        team2Score += points[1]
+
+        if team1Score >= 25 or team2Score <= -25:
+            print("Team 1 Won!!!")
+            break
+
+        if team2Score >= 25 or team1Score <= -25:
+            print("Team 2 Won!!!")
+            break
+
         remove_files()
 
 main()
