@@ -10,9 +10,10 @@ import numpy as np
 import os
 
 players = [[],[],[],[]]
+GOAL_POINTS = 10
 POSSIBLE_BIDS = {'p': -1, '1': 1, '1no': 2, '2': 3, '2no': 4, '3': 5, '3no': 6, '4': 7, '4no': 8, '5': 9, '5no': 10,
                  '6': 11, '6no': 12, '7': 13, '7no': 14}
-CARD_VALUES = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K': 13, 'A':14}
+CARD_VALUES = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 't':10, 'J':11, 'Q':12, 'K': 13, 'A':14}
 
 player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0},
                 {'h':0, 'd':0, 's':0, 'c':0}]
@@ -31,17 +32,17 @@ def remove_files():
 
 # a helper function to retrieve the suit of a card
 def get_card_suit(card):
-    suit = card[-1]
+    suit = card[0]
     return suit
 
 # a function to create a deck of 52 cards
 def create_deck():
     deck = []
     suits = ['h','d','s','c']
-    values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K', 'A']
+    values = [2, 3, 4, 5, 6, 7, 8, 9, 't', 'J', 'Q', 'K', 'A']
     for suit in suits:
         for value in values:
-            card = str(value) + suit
+            card = suit + str(value)
             deck.append(card)
     return deck
 
@@ -94,6 +95,7 @@ def setup(dealer):
         deal(deck, dealer)
         #right out each players hand to a file
         for i in range(4):
+            players[i].sort()
             fn = 'player' + str(i) + '.txt'
             file = open(fn, "x")
             file.write(str(players[i]))
@@ -163,7 +165,7 @@ def findSuit(played, suit, default = -1):
     card_values = []
     for card in played:
         if get_card_suit(card) == suit:
-            value = CARD_VALUES[card[0]]
+            value = CARD_VALUES[card[1]]
             card_values.append(value)
         else:
             card_values.append(default)
@@ -258,11 +260,11 @@ def main():
         team1Score += points[0]
         team2Score += points[1]
 
-        if team1Score >= 25 or team2Score <= -25:
+        if team1Score >= GOAL_POINTS or team2Score <= -GOAL_POINTS:
             print("Team 1 Won!!!")
             break
 
-        if team2Score >= 25 or team1Score <= -25:
+        if team2Score >= GOAL_POINTS or team1Score <= -GOAL_POINTS:
             print("Team 2 Won!!!")
             break
 
