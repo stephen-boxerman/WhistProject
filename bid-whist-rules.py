@@ -10,7 +10,7 @@ import numpy as np
 import os
 
 players = [[],[],[],[]]
-GOAL_POINTS = 10
+GOAL_POINTS = 1
 POSSIBLE_BIDS = {'p': -1, '1': 1, '1no': 2, '2': 3, '2no': 4, '3': 5, '3no': 6, '4': 7, '4no': 8, '5': 9, '5no': 10,
                  '6': 11, '6no': 12, '7': 13, '7no': 14}
 CARD_VALUES = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 't':10, 'J':11, 'Q':12, 'K': 13, 'A':14}
@@ -21,6 +21,10 @@ player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h'
 # a helper function to find the next player
 def next_player(player):
     return (player + 1) % 4
+
+def is_legal(card, suit):
+    return card[0] == suit
+
 
 # a helper function to remove the files we created
 # to hold the persons hand information
@@ -226,11 +230,44 @@ def play(leadingPlayer, restriction):
 
     return tricks
 
+def random_play(leadingPlayer, restriction):
+    for i in range(13):
+        tricks = [0, 0]
+        playedCards = []
+
+        card = play_card(leadingPlayer)
+        playedCards.append(card)
+        leadSuit = get_card_suit(card)
+        current_player = next_player(leadingPlayer)
+        for i in range(3):
+            card = play_card(current_player)
+            while get_card_suit(card) != get_card_suit(playedCards[0]):
+                if has_suit(current_player, get_card_suit(playedCards[0])):
+                    print('You must follow suit.')
+                    card = play_card(current_player)
+                else:
+                    break
+
+            playedCards.append(card)
+            remove_card(current_player, card)
+            current_player = next_player(current_player)
+
+        winningCard = findWinningCard(playedCards, restriction, leadSuit)
+
+        winningPlayer = (leadingPlayer + winningCard) % 4
+        print("Player " + str(winningPlayer) + " won the trick.\n")
+
+        tricks[winningPlayer % 2] += 1
+        leadingPlayer = winningPlayer
+
+    return tricks
+
 
 def calcScores(tricks, winningBid, leadingPlayer, restriction):
 
-    leadingTeam = leadingPlayer % 2 # leadingTeam[0] = player0, player2
-    nonLeadingTeam = leadingTeam+1%2
+    leadingTeam = leadingPlayer % 2 # leadingTeam[0] = player0, player2 - Asher Gingerich
+    nonLeadingTeam = (leadingTeam+1) % 2
+    print(nonLeadingTeam)
 
     trickGoal = int(winningBid[0])
 
@@ -246,10 +283,11 @@ def calcScores(tricks, winningBid, leadingPlayer, restriction):
             points[nonLeadingTeam] += trickPotential[leadingTeam]
     if restriction in ["asc", "desc"]:
         points[leadingTeam] *= 2
+    print(points)
     return points
 
 
-def main():
+def main(debug = False):
     remove_files()
     dealer = 0
     team1Score = 0
@@ -259,10 +297,15 @@ def main():
         bids = setup(dealer)
         leadingPlayer, restriction, winningIndex = getWinningBid(bids, dealer)
         winningBid = bids[winningIndex]
-        tricks = play(leadingPlayer, restriction)
+        if debug:
+            tricks = random_play(leadingPlayer, restriction)
+        else:
+            tricks = play(leadingPlayer, restriction)
         points = calcScores(tricks, winningBid, leadingPlayer, restriction)
         team1Score += points[0]
         team2Score += points[1]
+
+        print("Team 1: " + str(team1Score) + "\nTeam2: " + str(team2Score))
 
         if team1Score >= GOAL_POINTS or team2Score <= -GOAL_POINTS:
             print("Team 1 Won!!!")
@@ -272,6 +315,6 @@ def main():
             print("Team 2 Won!!!")
             break
 
-        remove_files()
+    remove_files()
 
 main()
