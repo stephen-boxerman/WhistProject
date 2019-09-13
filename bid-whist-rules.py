@@ -232,37 +232,6 @@ def play(leadingPlayer, restriction):
 
     return tricks
 
-def random_play(leadingPlayer, restriction):
-    for i in range(13):
-        tricks = [0, 0]
-        playedCards = []
-
-        card = play_card(leadingPlayer)
-        playedCards.append(card)
-        leadSuit = get_card_suit(card)
-        current_player = next_player(leadingPlayer)
-        for i in range(3):
-            card = play_card(current_player)
-            while get_card_suit(card) != get_card_suit(playedCards[0]):
-                if has_suit(current_player, get_card_suit(playedCards[0])):
-                    print('You must follow suit.')
-                    card = play_card(current_player)
-                else:
-                    break
-
-            playedCards.append(card)
-            remove_card(current_player, card)
-            current_player = next_player(current_player)
-
-        winningCard = findWinningCard(playedCards, restriction, leadSuit)
-
-        winningPlayer = (leadingPlayer + winningCard) % 4
-        print("Player " + str(winningPlayer) + " won the trick.\n")
-
-        tricks[winningPlayer % 2] += 1
-        leadingPlayer = winningPlayer
-
-    return tricks
 
 # a function that calculates the sore for both teams after a hand is finished
 def calcScores(tricks, winningBid, leadingPlayer, restriction):
@@ -310,11 +279,6 @@ def main(debug = False):
         leadingPlayer, restriction, winningIndex = getWinningBid(bids, dealer)# determine leading player and index of winning bid
 
         winningBid = bids[winningIndex]
-	# use randome players for easier testing (also considered first "AI")
-        if debug:
-            tricks = random_play(leadingPlayer, restriction)
-        else:
-            tricks = play(leadingPlayer, restriction)
 
         points = calcScores(tricks, winningBid, leadingPlayer, restriction)# get points won by teams
 
