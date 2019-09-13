@@ -8,7 +8,7 @@ import random
 import os
 import Player
 
-players = [[],[],[],[]]
+players = []
 GOAL_POINTS = 1
 POSSIBLE_BIDS = {'p': -1, '1': 1, '1no': 2, '2': 3, '2no': 4, '3': 5, '3no': 6, '4': 7, '4no': 8, '5': 9, '5no': 10,
                  '6': 11, '6no': 12, '7': 13, '7no': 14}
