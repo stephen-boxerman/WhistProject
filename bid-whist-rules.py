@@ -6,7 +6,6 @@
 
 import random
 import os
-import Player
 
 players = [[],[],[],[]]
 GOAL_POINTS = 1
@@ -279,8 +278,7 @@ def main(debug = False):
         leadingPlayer, restriction, winningIndex = getWinningBid(bids, dealer)# determine leading player and index of winning bid
 
         winningBid = bids[winningIndex]
-	
-	tricks = play(leadingPlayer, restriction)
+        tricks = play(leadingPlayer, restriction)
 
         points = calcScores(tricks, winningBid, leadingPlayer, restriction)# get points won by teams
 
