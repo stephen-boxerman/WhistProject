@@ -6,7 +6,7 @@
 
 import random
 import os
-import Player
+from Player import randomPlayer as RP
 
 players = []
 GOAL_POINTS = 1
@@ -64,7 +64,7 @@ def deal(deck, dealer):
     #main body of the function
     while len(deck) != 0:
         card = deck.pop()
-        players[currentPlayer].append(card)
+        players[currentPlayer].hand
         suit = get_card_suit(card)
         player_suits[currentPlayer][suit] += 1
         currentPlayer = next_player(currentPlayer)
@@ -281,10 +281,10 @@ def calcScores(tricks, winningBid, leadingPlayer, restriction):
     #point calculation
     if trickPotential[leadingTeam] > trickGoal:
         points[leadingTeam] += trickPotential[leadingTeam]
-	#NOTE: if the leadingTeam made thier bid, it is imposable for the other team to have made points
+    #NOTE: if the leadingTeam made thier bid, it is imposable for the other team to have made points
     else:
         points[leadingTeam] -= trickGoal
-	#NOTE: If leadingTeam did NOT make thier bid, it is posable that the other team made points
+    #NOTE: If leadingTeam did NOT make thier bid, it is posable that the other team made points
         if trickPotential[nonLeadingTeam] > 0:
             points[nonLeadingTeam] += trickPotential[leadingTeam]
 
@@ -304,13 +304,14 @@ def main(debug = False):
     team1Score = 0
     team2Score = 0
     while True:
+        for i in range(4):
+            players.append(RP())
+        bids = setup(dealer) # go through pre-play setup
 
-        bids = setup(dealer)# go through pre-play setup
-	
         leadingPlayer, restriction, winningIndex = getWinningBid(bids, dealer)# determine leading player and index of winning bid
 
         winningBid = bids[winningIndex]
-	# use randome players for easier testing (also considered first "AI")
+    # use randome players for easier testing (also considered first "AI")
         if debug:
             tricks = random_play(leadingPlayer, restriction)
         else:
@@ -322,8 +323,8 @@ def main(debug = False):
         team2Score += points[1]
 
         print("Team 1: " + str(team1Score) + "\nTeam2: " + str(team2Score))
-	
-	# logic for determining winner of the game
+
+    # logic for determining winner of the game
         if team1Score >= GOAL_POINTS or team2Score <= -GOAL_POINTS:
             print("Team 1 Won!!!")
             break

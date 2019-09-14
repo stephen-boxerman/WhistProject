@@ -14,6 +14,7 @@ class randomPlayer(Player):
     def __init__(self):
         self.lastPlayedCard = -1
 
+
     def play(self, legalCard):
         if not legalCard:
             self.lastPlayedCard += 1
