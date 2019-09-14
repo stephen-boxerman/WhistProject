@@ -280,6 +280,8 @@ def main(debug = False):
 
         winningBid = bids[winningIndex]
 
+        tricks = play(leadingPlayer, restriction)
+
         points = calcScores(tricks, winningBid, leadingPlayer, restriction)# get points won by teams
 
         team1Score += points[0]
