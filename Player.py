@@ -1,6 +1,6 @@
 import random
 
-class Player():
+class Player:
     def __init__(self):
         self.hand = []
         self.bid = ''
@@ -12,6 +12,7 @@ class Player():
 
 class randomPlayer(Player):
     def __init__(self):
+        super().__init__()
         self.lastPlayedCard = -1
 
 
