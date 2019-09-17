@@ -9,13 +9,15 @@ import os
 from Player import randomPlayer as RP
 
 players = []
-GOAL_POINTS = 1
-POSSIBLE_BIDS = {'p': -1, '1': 1, '1no': 2, '2': 3, '2no': 4, '3': 5, '3no': 6, '4': 7, '4no': 8, '5': 9, '5no': 10,
+GOAL_POINTS = 50
+POSSIBLE_BIDS = {'p': 0, '1': 1, '1no': 2, '2': 3, '2no': 4, '3': 5, '3no': 6, '4': 7, '4no': 8, '5': 9, '5no': 10,
                  '6': 11, '6no': 12, '7': 13, '7no': 14}
 CARD_VALUES = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 't':10, 'J':11, 'Q':12, 'K': 13, 'A':14}
 
 player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0},
                 {'h':0, 'd':0, 's':0, 'c':0}]
+
+cards = []
 
 # a helper function to find the next player
 def next_player(player):
@@ -23,6 +25,11 @@ def next_player(player):
 
 def is_legal(card, suit):
     return card[0] == suit
+
+def get_bid_key(search_val):
+    for bid, value in POSSIBLE_BIDS.items():
+        if value == search_val:
+            return bid
 
 
 # a helper function to remove the files we created
@@ -64,7 +71,7 @@ def deal(deck, dealer):
     #main body of the function
     while len(deck) != 0:
         card = deck.pop()
-        players[currentPlayer].hand
+        players[currentPlayer].hand.append(card)
         suit = get_card_suit(card)
         player_suits[currentPlayer][suit] += 1
         currentPlayer = next_player(currentPlayer)
@@ -73,7 +80,9 @@ def deal(deck, dealer):
 def bid(currentPlayer, dealer):
 
     #get the bid of the current player
-    current_bid = input("player" + str(currentPlayer) + " bid: -> ")
+    current_bid = players[currentPlayer].get_bid()
+    current_bid = get_bid_key(current_bid)
+
 
     # logic to handle a faulty bid
     if current_bid not in POSSIBLE_BIDS:
@@ -98,26 +107,15 @@ def setup(dealer):
         deal(deck, dealer)
         #right out each players hand to a file
         for i in range(4):
-            players[i].sort()
-            fn = 'player' + str(i) + '.txt'
-            file = open(fn, "x")
-            file.write(str(players[i]))
-            file.close()
+            players[i].hand.sort()
+
         # set currentPlayer to the player on the dealer left
         currentPlayer = next_player(dealer)
 
-        #loops through till all players have made a legal bid
-        while True:
-            try:
-                bids = bid(currentPlayer, dealer)
-                if (bids == ['p', 'p', 'p', 'p']):
-                    print('All players passed.')
-                    bids = bid(currentPlayer, dealer)
-            except:
-                #need function to handle an incorrect bid
-                print("Incorrect Bid.  Please try again")
-                continue
-            break
+        bids = bid(currentPlayer, dealer)
+        if (bids == ['p', 'p', 'p', 'p']):
+            print('All players passed.')
+            bids = bid(currentPlayer, dealer)
 
         if bids != ['p', 'p', 'p', 'p']:
             return bids
@@ -133,29 +131,14 @@ def getWinningBid(bids, dealer):
     leadingPlayer = (winningBid + 1 + dealer) % 4
 
     # set the winning criteria for winning a trick
-    if bidValues[winningBid] % 2 == 0:
-        restriction = input("High or low? (asc or desc) -> ")
-        while restriction not in ['asc', 'desc']:
-            print('Invalid.  Must enter asc or desc.')
-            restriction = input("High or low? (asc or desc) -> ")
-    else:
-        restriction = input("What's trump? (h, d, s, c) -> ")
-        while restriction not in ['h', 'd', 's', 'c']:
-            print('Invalid.  Must enter h, d, s, or c.')
-            restriction = input("What's trump? (h, d, s, c) -> ")
+    restriction = players[leadingPlayer].get_trump()
 
     return leadingPlayer, restriction, winningBid
 
 # function for a player to play a card
 def play_card(player):
-    card = ''
-    while True:
-        card = input('player' + str(player) + ' play a card. -> ')
-        #logic to determin if the player has the card in hand
-        if card not in players[player]:
-            print("You do not have that card in hand. Please play a legal card.")
-        else:
-            return card
+    card = players[player].play()
+    return card
 
 # helper function for determining if a suit is in a players hand
 def has_suit(player, suit):
@@ -163,8 +146,8 @@ def has_suit(player, suit):
 
 # helper function to remove a card from a players hand
 def remove_card(player, card):
-    card_index = players[player].index(card)
-    players[player].pop(card_index)
+    card_index = players[player].hand.index(card)
+    players[player].hand.pop(card_index)
 
 #a function to find the number of of cards played that are of a given suit an thier values
 def findSuit(played, suit, default = -1):
@@ -199,21 +182,21 @@ def findWinningCard(playedCards, restriction, leadSuit):
 
 # a function to exicute the game play for a single hand
 def play(leadingPlayer, restriction):
+    tricks = [0, 0]
     for i in range(13):
-        tricks = [0, 0]
+        winningData = [0,0,0,0]
         playedCards = []
 
-        card = play_card(leadingPlayer) # have the leading player play a card
+        card = play_card(leadingPlayer)  # have the leading player play a card
         playedCards.append(card)
-        leadSuit = get_card_suit(card) #set the suit that all other players must play if posable
-        current_player = next_player(leadingPlayer) #set current player to the curent players left
+        leadSuit = get_card_suit(card)  # set the suit that all other players must play if posable
+        current_player = next_player(leadingPlayer)  # set current player to the curent players left
         for i in range(3):
-            card = play_card(current_player) #have a player play a card
+            card = play_card(current_player)  # have a player play a card
 
-	    # logic to determin if player has played a legal card
+        # logic to determin if player has played a legal card
             while get_card_suit(card) != get_card_suit(playedCards[0]): 
                 if has_suit(current_player, get_card_suit(playedCards[0])):
-                    print('You must follow suit.')
                     card = play_card(current_player)
                 else:
                     break
@@ -226,43 +209,15 @@ def play(leadingPlayer, restriction):
 
         winningPlayer = (leadingPlayer + winningCard) % 4  #find who won the hand
         print("Player " + str(winningPlayer) + " won the trick.\n")
-
         tricks[winningPlayer % 2] += 1 #acumulate tricks for winning team
         leadingPlayer = winningPlayer
+        winningData[winningPlayer] = 1
+        playedCards += winningData
+        cards.append(playedCards)
+
 
     return tricks
 
-def random_play(leadingPlayer, restriction):
-    for i in range(13):
-        tricks = [0, 0]
-        playedCards = []
-
-        card = play_card(leadingPlayer)
-        playedCards.append(card)
-        leadSuit = get_card_suit(card)
-        current_player = next_player(leadingPlayer)
-        for i in range(3):
-            card = play_card(current_player)
-            while get_card_suit(card) != get_card_suit(playedCards[0]):
-                if has_suit(current_player, get_card_suit(playedCards[0])):
-                    print('You must follow suit.')
-                    card = play_card(current_player)
-                else:
-                    break
-
-            playedCards.append(card)
-            remove_card(current_player, card)
-            current_player = next_player(current_player)
-
-        winningCard = findWinningCard(playedCards, restriction, leadSuit)
-
-        winningPlayer = (leadingPlayer + winningCard) % 4
-        print("Player " + str(winningPlayer) + " won the trick.\n")
-
-        tricks[winningPlayer % 2] += 1
-        leadingPlayer = winningPlayer
-
-    return tricks
 
 # a function that calculates the sore for both teams after a hand is finished
 def calcScores(tricks, winningBid, leadingPlayer, restriction):
@@ -272,10 +227,8 @@ def calcScores(tricks, winningBid, leadingPlayer, restriction):
     
     # set the number of points that the team who won the bid must make to gain points, else the lose that many points
     trickGoal = int(winningBid[0])
-    
     # takes into acount the book rule
     trickPotential = [tricks[0]-6,tricks[1]-6]
-
     points = [0, 0]
 
     #point calculation
@@ -285,8 +238,9 @@ def calcScores(tricks, winningBid, leadingPlayer, restriction):
     else:
         points[leadingTeam] -= trickGoal
     #NOTE: If leadingTeam did NOT make thier bid, it is posable that the other team made points
-        if trickPotential[nonLeadingTeam] > 0:
-            points[nonLeadingTeam] += trickPotential[leadingTeam]
+
+    if trickPotential[nonLeadingTeam] > 0:
+        points[nonLeadingTeam] += trickPotential[nonLeadingTeam]
 
     # double points gained/lost if no trump
     if restriction in ["asc", "desc"]:
@@ -295,7 +249,9 @@ def calcScores(tricks, winningBid, leadingPlayer, restriction):
     return points
 
 
-def main(debug = False):
+def main(debug = False, verbose = False):
+    if verbose:
+        print("\nBeginning new game...")
     #remove any files made by previous runs
     remove_files()
 
@@ -306,33 +262,41 @@ def main(debug = False):
     while True:
         for i in range(4):
             players.append(RP())
+        if verbose:
+            print("Dealing new hand...\nBidding...")
         bids = setup(dealer) # go through pre-play setup
 
         leadingPlayer, restriction, winningIndex = getWinningBid(bids, dealer)# determine leading player and index of winning bid
 
         winningBid = bids[winningIndex]
     # use randome players for easier testing (also considered first "AI")
-        if debug:
-            tricks = random_play(leadingPlayer, restriction)
-        else:
-            tricks = play(leadingPlayer, restriction)
+        if verbose:
+            print("Beginning new hand...\n")
+        tricks = play(leadingPlayer, restriction)
 
         points = calcScores(tricks, winningBid, leadingPlayer, restriction)# get points won by teams
 
         team1Score += points[0]
         team2Score += points[1]
 
-        print("Team 1: " + str(team1Score) + "\nTeam2: " + str(team2Score))
+        print("Team 1: " + str(team1Score) + "\nTeam2: " + str(team2Score) + "\n")
 
     # logic for determining winner of the game
         if team1Score >= GOAL_POINTS or team2Score <= -GOAL_POINTS:
-            print("Team 1 Won!!!")
+            print("Team 1 Won!!!\n")
             break
 
         if team2Score >= GOAL_POINTS or team1Score <= -GOAL_POINTS:
-            print("Team 2 Won!!!")
+            print("Team 2 Won!!!\n")
             break
 
     remove_files() #remove files at end of game
 
-main()
+
+def whist_tourny(numGames = 10):
+    for i in range(numGames):
+        main()
+
+
+whist_tourny()
+
