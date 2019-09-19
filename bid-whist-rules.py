@@ -6,6 +6,7 @@
 
 import random
 import os
+import cardReader
 
 players = [[],[],[],[]]
 GOAL_POINTS = 1
@@ -46,13 +47,14 @@ def create_deck():
         for value in values:
             card = suit + str(value)
             deck.append(card)
+            cardReader.genQR(card, 'images/cards/'+card+'.png')
     return deck
 
 # a function to deal out the cards;
 # 13 per player, one at a time
 def deal(deck, dealer):
     player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0},
-                {'h':0, 'd':0, 's':0, 'c':0}]
+                    {'h':0, 'd':0, 's':0, 'c':0}]
 
     #shuffle the deck
     random.shuffle(deck)
@@ -298,4 +300,5 @@ def main(debug = False):
 
     remove_files() #remove files at end of game
 
-main()
+#main()
+create_deck()
