@@ -14,7 +14,7 @@ from pyzbar import pyzbar as qr
 # Generate a QR code based on content provided
 def genQR(content, location):
     generated_qr = pyqrcode.create(content)
-    generated_qr.png(location, scale=2)
+    generated_qr.png(location, scale=6)
 
 
 def qr_read(image):
@@ -87,4 +87,4 @@ def main():
     img2 = cv.drawKeypoints(img, keys, None, color=(0, 255, 0), flags=0)
     plt.imshow(img2), plt.show()
 
-print(pollVideo())
+print(video())

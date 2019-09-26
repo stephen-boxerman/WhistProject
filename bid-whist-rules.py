@@ -6,7 +6,7 @@
 
 import random
 import os
-import cardReader
+#import cardReader
 
 players = [[],[],[],[]]
 GOAL_POINTS = 1
@@ -47,7 +47,7 @@ def create_deck():
         for value in values:
             card = suit + str(value)
             deck.append(card)
-            cardReader.genQR(card, 'images/cards/'+card+'.png')
+            #cardReader.genQR(card, 'images/cards/'+card+'.png')
     return deck
 
 # a function to deal out the cards;
