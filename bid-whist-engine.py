@@ -7,6 +7,7 @@
 import random
 import os
 from Player import randomPlayer as RP
+import function_map
 
 players = []
 GOAL_POINTS = 50
@@ -19,12 +20,6 @@ player_suits = [{'h':0, 'd':0, 's':0, 'c':0}, {'h':0, 'd':0, 's':0, 'c':0}, {'h'
 
 cards = []
 
-# a helper function to find the next player
-def next_player(player):
-    return (player + 1) % 4
-
-def is_legal(card, suit):
-    return card[0] == suit
 
 def get_bid_key(search_val):
     for bid, value in POSSIBLE_BIDS.items():
@@ -66,7 +61,7 @@ def deal(deck, dealer):
     random.shuffle(deck)
 
     #deals to the player to the left of the dealer first
-    currentPlayer = next_player(dealer)
+    currentPlayer = function_map.next_player(dealer)
 
     #main body of the function
     while len(deck) != 0:
@@ -74,7 +69,7 @@ def deal(deck, dealer):
         players[currentPlayer].hand.append(card)
         suit = get_card_suit(card)
         player_suits[currentPlayer][suit] += 1
-        currentPlayer = next_player(currentPlayer)
+        currentPlayer = function_map.next_player(dealer)
 
 # a recursive function to handle the bidding process
 def bid(currentPlayer, dealer):
@@ -92,7 +87,7 @@ def bid(currentPlayer, dealer):
         return [current_bid]
     #recusive case
     else:
-        status = bid(next_player(currentPlayer), dealer)
+        status = bid(function_map.next_player(currentPlayer), dealer)
         build = [current_bid]
         build.extend(status)
         return build
@@ -110,7 +105,7 @@ def setup(dealer):
             players[i].hand.sort()
 
         # set currentPlayer to the player on the dealer left
-        currentPlayer = next_player(dealer)
+        currentPlayer = function_map.next_player(dealer)
 
         bids = bid(currentPlayer, dealer)
         if (bids == ['p', 'p', 'p', 'p']):
@@ -190,7 +185,7 @@ def play(leadingPlayer, restriction):
         card = play_card(leadingPlayer)  # have the leading player play a card
         playedCards.append(card)
         leadSuit = get_card_suit(card)  # set the suit that all other players must play if posable
-        current_player = next_player(leadingPlayer)  # set current player to the curent players left
+        current_player = function_map.next_player(current_player)  # set current player to the curent players left
         for i in range(3):
             card = play_card(current_player)  # have a player play a card
 
@@ -203,7 +198,7 @@ def play(leadingPlayer, restriction):
 
             playedCards.append(card)
             remove_card(current_player, card)
-            current_player = next_player(current_player)
+            current_player = function_map.next_player(dealer)
 
         winningCard = findWinningCard(playedCards, restriction, leadSuit)
 
