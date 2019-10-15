@@ -20,7 +20,6 @@ class randomPlayer(Player):
         super().__init__()
         self.lastPlayedCard = -1
 
-
     def play(self):
         self.lastPlayedCard += 1
         if self.lastPlayedCard > len(self.hand) - 1:
