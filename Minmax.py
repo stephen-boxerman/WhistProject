@@ -22,7 +22,7 @@ class Minmax:
     def testTrick(self, state):
         if len(state['trick']) == 4:
             state['numTricks'] += 1
-            print("Number of Tricks -> " + str(state['numTricks']))
+            #print("Number of Tricks -> " + str(state['numTricks']))
             winningCard = function_map.findWinningCard(state['trick'], self.restriction, function_map.get_card_suit(state['leadCard']))
             leadingPlayer = function_map.getWinningPlayer(state['leadingPlayer'], winningCard)
             state['player'] = leadingPlayer
@@ -53,7 +53,7 @@ class Minmax:
             return True
 
     def evalTricks(self, points):
-        print("Evaluating Tricks...")
+        #print("Evaluating Tricks...")
 
         leadingTeam = self.player % 2
 
@@ -72,19 +72,28 @@ class Minmax:
     # def isBranching(self, alpha, beta, value, isMax):
     #     if isMax and value < alpha
 
+    def getCardsOfSuit(suit):
+        cardsOfSuit = []
+        for card in self.cardsPlayed:
+            if card[0] == suit:
+                cardsOfSuit.append(card)
+
+    def getOptimalLeadCard(cards, state):
+       pass
+
     def minmax(self,alpha, beta, isMax, state):
         # print("Beginning minmax")
         state['player'] = function_map.next_player(state['player'])
 
         self.testTrick(state)
-        print('\n', 'Length of deck ->', len(state['deck']), 'Length of hand ->', len(state['hand']))
+        #print('\n', 'Length of deck ->', len(state['deck']), 'Length of hand ->', len(state['hand']))
         if state['leadingPlayer'] % 2 == self.player % 2:
             isMax = True
         else:
             isMax = False
 
         if len(state['deck']) == 0 and len(state['hand']) == 0:
-            print("End of branch")
+            #print("End of branch")
             return self.evalTricks(state['points'])
 
         bestCard = ''
@@ -102,7 +111,6 @@ class Minmax:
         else:
             for card in cards:
 
-                cardVal = function_map.CARD_VALUES[card[1]]
                 index = cards.index(card)
                 if self.isLegal(card, state['leadCard'], cards):
 
@@ -147,13 +155,12 @@ class Minmax:
                     index = state['hand'].index(card)
                     state['hand'].remove(card)
                     value = self.minmax(alpha, beta, False, copy.deepcopy(state))
-                    print('Value for owning plauer ->', value)
+                    #print('Value for owning plauer ->', value)
                     state['hand'].insert(index, card)
                     state['trick'].remove(card)
                     self.cardsPlayed.remove(card)
 
-                if leadCard == '':
-                    state['leadCard'] = ''
+                    print('\n',"Value ->", value, '\n', "Card->", card)
 
                 if value > alpha:
                     alpha = value
@@ -165,12 +172,23 @@ def main():
     card = 'noCard'
     # deck = ['hJ', 'hQ', 'hK']
     # hand = ['hA']
+    deck = []
+    hand = []
+    for suit in ['h', 's', 'd', 'c']:
+        for value in ['2', '8', 'A']:
+            card = suit + value
+            deck.append(card)
+    random.shuffle(deck)
+    for i in range(3):
+        hand.append(deck[i])
+        deck.remove(deck[i])
 
-    deck = ['h5','hJ','ht','h7', 'h9', 'h4', 'hQ', 'h3', 'hK']
-    hand = ['hA', 'h6', 'h2']
+    leadCard = deck[0]
+    deck.remove(leadCard)
+    print(leadCard)
 
     minmax = Minmax(hand, 0)
-    card = minmax.getOptimalCard(deck, hand, 'h8', 3)
+    card = minmax.getOptimalCard(deck, hand, leadCard, 1)
     print(card)
 
 main()
