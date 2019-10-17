@@ -3,12 +3,9 @@ import random
 import copy
 
 class Minmax:
-    def __init__(self, hand, player, restriction = 'asc'):
+    def __init__(self, player, restriction = 'asc'):
         self.player = player
-        self.hand = hand
         self.restriction = restriction
-        self.cardsPlayed = []
-        self.numBranches = 0
 
     def suitInCards(self, suit, cards):
         numSuit = 0
@@ -32,10 +29,15 @@ class Minmax:
                 state['points'][1] += 1
             state['trick'] = []
             state['leadingPlayer'] = leadingPlayer
+            state['player'] = leadingPlayer
+            state['leadCard'] = ''
 
-    def isLegal(self, card, leadCard, cards):
+    def isLegal(self, card, leadCard, cards, cardsPlayed):
         if leadCard == '':
             return True
+
+        # elif len(cards) == 1:
+        #     return True
 
         elif self.suitInCards(leadCard[0], cards) == 0:
             return True
@@ -43,7 +45,7 @@ class Minmax:
         elif card not in cards:
             return False
 
-        elif card in self.cardsPlayed:
+        elif card in cardsPlayed:
             return False
 
         elif card[0] != leadCard[0]:
@@ -61,14 +63,6 @@ class Minmax:
 
         return score
 
-    def setCards(self, hand, deck, isMax, player):
-        if isMax and player == self.player:
-            cards = hand
-        else:
-            cards = deck
-
-        return cards
-
     # def isBranching(self, alpha, beta, value, isMax):
     #     if isMax and value < alpha
 
@@ -78,53 +72,53 @@ class Minmax:
             if card[0] == suit:
                 cardsOfSuit.append(card)
 
-    def getOptimalLeadCard(cards, state):
-       pass
-
     def minmax(self,alpha, beta, isMax, state):
         # print("Beginning minmax")
+
         state['player'] = function_map.next_player(state['player'])
 
         self.testTrick(state)
         #print('\n', 'Length of deck ->', len(state['deck']), 'Length of hand ->', len(state['hand']))
-        if state['leadingPlayer'] % 2 == self.player % 2:
+        if state['player'] % 2 == self.player % 2:
             isMax = True
         else:
             isMax = False
 
-        if len(state['deck']) == 0 and len(state['hand']) == 0:
+        if state['hands'] == [[],[],[],[]]:
             #print("End of branch")
             return self.evalTricks(state['points'])
 
         bestCard = ''
         bestVal = -float('inf')
-        cards = self.setCards(state['hand'], state['deck'], isMax, state['player'])
+        cards = state['hands'][state['player']][:]
+        hand = state['hands'][state['player']]
+
         if state['leadCard'] == '':
             card = cards[0]
             state['trick'].append(card)
-            self.cardsPlayed.append(card)
-            index = cards.index(card)
-            cards.remove(card)
+            state['leadCard'] = card
+            state['cardsPlayed'].append(card)
+            hand.remove(card)
             # print('Points before recursion', state['points'])
-            bestVal = self.minmax(alpha, beta, not isMax, copy.deepcopy(state))
+            bestVal = self.minmax(alpha, beta, isMax, copy.deepcopy(state))
 
         else:
             for card in cards:
 
                 index = cards.index(card)
-                if self.isLegal(card, state['leadCard'], cards):
+                if self.isLegal(card, state['leadCard'], cards, state['cardsPlayed']):
 
-                    self.cardsPlayed.append(card)
+                    state['cardsPlayed'].append(card)
                     state['trick'].append(card)
                     index = cards.index(card)
-                    cards.remove(card)
+                    hand.remove(card)
                     # print('Points before recursion', state['points'])
-                    value = self.minmax(alpha, beta, not isMax, copy.deepcopy(state))
+                    value = self.minmax(alpha, beta, isMax, copy.deepcopy(state))
                     # print('Points after recursion', state['points'])
 
-                    cards.insert(index, card)
+                    hand.insert(index, card)
                     state['trick'].remove(card)
-                    self.cardsPlayed.remove(card)
+                    state['cardsPlayed'].remove(card)
 
                     if value > bestVal:
                         bestVal = value
@@ -134,61 +128,83 @@ class Minmax:
 
 
 
-    def getOptimalCard(self, deck, hand, leadCard, leadingPlayer):
+    def getOptimalCard(self, hands, leadCard, leadingPlayer, trick):
+
+        values = []
 
         alpha = -float('inf')
         beta = float('inf')
         playCard = ''
 
-        state = {'hand': hand[:], 'deck':deck[:], 'player':self.player, 'leadCard':leadCard,
-                 'leadingPlayer':leadingPlayer, 'trick':[], 'points':[0,0], 'numTricks': 0}
+        state = {'hands': hands[:], 'player':self.player, 'leadCard':leadCard,
+                 'leadingPlayer':leadingPlayer, 'trick':trick, 'points':[0,0], 'numTricks': 0, 'cardsPlayed':[]}
 
-        for card in state['hand']:
-            if self.isLegal(card, state['leadCard'], state['hand']):
+        cards = state['hands'][state['player']][:]
+        hand = state['hands'][state['player']]
+
+        if state['leadCard'] != '':
+            state['cardsPlayed'].append(leadCard)
+
+        for card in cards:
+            if self.isLegal(card, state['leadCard'], cards, state['cardsPlayed']):
                 if leadCard == '':
                     state['leadCard'] = card
-                else:
                     state['trick'].append(state['leadCard'])
+                    state['cardsPlayed'].append(card)
+                else:
 
-                    self.cardsPlayed.append(card)
+                    state['cardsPlayed'].append(card)
                     state['trick'].append(card)
-                    index = state['hand'].index(card)
-                    state['hand'].remove(card)
+                    index = hand.index(card)
+                    hand.remove(card)
                     value = self.minmax(alpha, beta, False, copy.deepcopy(state))
+                    values.append(value)
                     #print('Value for owning plauer ->', value)
-                    state['hand'].insert(index, card)
+                    hand.insert(index, card)
                     state['trick'].remove(card)
-                    self.cardsPlayed.remove(card)
-
-                    print('\n',"Value ->", value, '\n', "Card->", card)
+                    state['cardsPlayed'].remove(card)
 
                 if value > alpha:
                     alpha = value
                     playCard = card
 
-        return playCard
+                print('\n',"Value ->", value, '\n', "Card->", card)
+
+        return playCard, values
 
 def main():
     card = 'noCard'
     # deck = ['hJ', 'hQ', 'hK']
     # hand = ['hA']
-    deck = []
-    hand = []
-    for suit in ['h', 's', 'd', 'c']:
-        for value in ['2', '8', 'A']:
-            card = suit + value
-            deck.append(card)
-    random.shuffle(deck)
-    for i in range(3):
-        hand.append(deck[i])
-        deck.remove(deck[i])
+    
+    #deck = ['h4', 'h5', 'h6', 'h7', 'h9', 'hJ', 'hQ', 'hK']
+    #hand = ['h2', 'hA', 'h3']
 
-    leadCard = deck[0]
-    deck.remove(leadCard)
-    print(leadCard)
+    hands = [['s8', 'c2', 'cA'], ['c8', 's2', 'd8'], ['sA', 'h2', 'hA'], ['dA', 'h8']]
+    leadCard = 'd2'
 
-    minmax = Minmax(hand, 0)
-    card = minmax.getOptimalCard(deck, hand, leadCard, 1)
+    # deck = []
+    # hands = [[], [], [], []]
+    #
+    # for suit in ['h', 's', 'd', 'c']:
+    #     for value in ['2', '5', '8', 'J', 'A']:
+    #         card = suit + value
+    #         deck.append(card)
+    #
+    # random.shuffle(deck)
+    # random.shuffle(deck)
+    #
+    # while len(deck) != 0:
+    #     for hand in hands:
+    #         card = deck.pop()
+    #         hand.append(card)
+    #
+    #
+    #
+    # leadCard = hands[3].pop()
+
+    minmax = Minmax(0)
+    card, values = minmax.getOptimalCard(hands, leadCard, 3, [leadCard])
     print(card)
 
 main()
