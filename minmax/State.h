@@ -34,6 +34,7 @@ class State
         State(vector<vector<string>> hands, int player, string leadCard, int leadingPlayer, vector<string> trick, vector<int> points,
           int numTricks, vector<string> cardsPlayed, string restriction = "asc", string bid = "");
         vector<string> getHand(int hand);
+        vector<vector<string>> getHands();
         void setPlayer(int player);
         int getPlayer();
         void setLeadCard(string card);
@@ -50,7 +51,7 @@ class State
         void setBid (string bid);
         string getBid();
 
-        void removeFromHand(int hand, string item);
+        void removeFromHand(int hand, int position);
         void addToHand(int hand, string card, int position);
         void addToCardsPlayed(string card);
         void removeFromCardsPlayed();
@@ -60,6 +61,7 @@ class State
         bool handsAreEmpty();
         int evalTricks();
         void printHands();
+        bool operator==(State state);
         State copy();
 
 };

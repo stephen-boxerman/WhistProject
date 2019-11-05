@@ -6,19 +6,19 @@
 
 #IncludeRegexTransform: 
 
-/home/stephen/CLionProjects/untitled/State.h
+/home/CS/users/sboxerma/.linux/WhistProject/minmax/State.h
 string
 -
 vector
 -
 
-/home/stephen/CLionProjects/untitled/main.cpp
+/home/CS/users/sboxerma/.linux/WhistProject/minmax/main.cpp
 iostream
 -
 string.h
 -
 State.h
-/home/stephen/CLionProjects/untitled/State.h
+/home/CS/users/sboxerma/.linux/WhistProject/minmax/State.h
 ctime
 -
 vector

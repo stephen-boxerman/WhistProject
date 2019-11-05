@@ -18,6 +18,8 @@ const map<string, int> POSABLE_BIDS = {{"p", 0}, {"1", 1}, {"1no", 2}, {"2", 3},
                                        {"4", 7}, {"4no", 8}, {"5", 9}, {"5no", 10}, {"6", 11}, {"6no", 12}, {"7", 13},
                                        {"7no", 14}};
 
+const map<string, unsigned long> deck = {{}};
+
 template < typename type>
 int findInVector(const std::vector<type>  & vecOfElements, const type & element)
 {
@@ -59,6 +61,11 @@ State::State(vector<vector<string> > hands, int player, string leadCard, int lea
 
 vector<string> State::getHand(int hand) {return this->hands[hand];}
 
+vector<vector<string>> State::getHands()
+{
+    return this->hands;
+}
+
 void State::setPlayer(int player) {this->player = player;}
 
 int State::getPlayer() {return this->player;}
@@ -91,14 +98,15 @@ string State::getBid() {return this -> bid;}
 
 
 
-void State::removeFromHand(int hand, string item)
+void State::removeFromHand(int hand, int position)
 {
-    remove(hands[hand].begin(), hands[hand].end(), item);
+   this -> hands[hand][position] = "";
 }
 
 void State::addToHand(int hand, string card, int position)
 {
-    hands[hand].emplace(hands[hand].begin() + position, card);
+    this->hands[hand][position] = card;
+    //hands[hand].emplace(hands[hand].begin() + position, card);
 }
 
 void State::addToCardsPlayed(string card) {this -> cardsPlayed.emplace_back(card);}
@@ -240,4 +248,13 @@ State State::copy()
     newState.bid = this->bid;
 
     return newState;
+}
+
+bool State::operator==(State state)
+{
+    if(this->hands != state.getHands()) return false;
+    if(this->player != state.getPlayer()) return false;
+    if(this->leadCard != state.getLeadCard()) return false;
+    if(this->leadingPlayer != state.getLeadingPLayer()) return false;
+    if(this->trick != state.getTrick()) return false;
 }

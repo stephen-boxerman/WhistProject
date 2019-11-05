@@ -9,6 +9,9 @@
 
 using namespace std;
 
+vector<State> states = {};
+vector<int> values = {};
+
 template < typename type>
 bool findInVector(const std::vector<type>  & vecOfElements, const type & element)
 {
@@ -98,13 +101,15 @@ int minmax(int alpha, int beta, State state)
 
         for(vector<string>::iterator it = hand.begin(); it<hand.end(); it++)
         {
+            int pos;
             if(*it != "")
             {
+                pos = (int)distance(hand.begin(), it);
                 string card = *it;
                 state.addToCardsPlayed(card);
                 state.addToTrick(card);
                 state.setLeadCard(card);
-                state.removeFromHand(player, card);
+                state.removeFromHand(player, pos);
                 bestVal = minmax(alpha, beta, state.copy());
                 break;
             }
@@ -118,11 +123,10 @@ int minmax(int alpha, int beta, State state)
             int pos;
 
             if (isLeagal(state, card, cards)) {
-
                 pos = (int)distance(cards.begin(), it);
                 state.addToCardsPlayed(card);
                 state.addToTrick(card);
-                state.removeFromHand(player, card);
+                state.removeFromHand(player, pos);
                 int value = minmax(alpha, beta, state.copy());
                 state.addToHand(player, card, pos);
                 state.removeFromTrick();
@@ -178,7 +182,7 @@ string getOptimalCard(State state)
             pos = (int)distance(hand.begin(), it);
             state.addToCardsPlayed(card);
             state.addToTrick(card);
-            state.removeFromHand(player, card);
+            state.removeFromHand(player, pos);
             value = minmax(alpha, beta, state.copy());
             state.addToHand(player, card, pos);
             state.removeFromCardsPlayed();
@@ -216,47 +220,40 @@ int main()
     string card;
     const int MAX_HAND_SIZE = 5;
 
-    deck = {"the deck"};
+    for(auto suit = SUITS.begin(); suit < SUITS.end(); suit++)
+    {
 
-    hands = {{"sA", "d2", "cA", "c2", "s2"}, {"d5", "hJ", "h5", "h2", "c5"}, {"dJ", "dA", "d8", "sJ", "s8"}, {"s5", "h8", "sJ", "c8", "hA"}};
+        for (auto value = CARD_VALUES.begin(); value < CARD_VALUES.end(); value++)
+        {
+            card = *suit;
+            card.operator+=(*value);
+            deck.emplace_back(card);
+        }
+    }
 
-//    for(auto suit = SUITS.begin(); suit < SUITS.end(); suit++)
-//    {
-//
-//        for (auto value = CARD_VALUES.begin(); value < CARD_VALUES.end(); value++)
-//        {
-//            card = *suit;
-//            card.operator+=(*value);
-//            deck.emplace_back(card);
-//        }
-//    }
-//
-//    srand(time(NULL));
-//    random_shuffle(deck.begin(), deck.end());
-//
-//    vector<string>::iterator cards = deck.begin();
-//
-//    for (auto i = 0; i < MAX_HAND_SIZE; i++)
-//    {
-//        for (auto hand = hands.begin(); hand < hands.end(); hand++)
-//        {
-//            vector<string>::iterator endOfHand = hand->end();
-//            hand->emplace(endOfHand, *cards);
-//            if(cards != deck.end()) cards++;
-//        }
-//    }
+    srand(time(NULL));
+    random_shuffle(deck.begin(), deck.end());
+
+    vector<string>::iterator cards = deck.begin();
+
+    for (auto i = 0; i < MAX_HAND_SIZE; i++)
+    {
+        for (auto hand = hands.begin(); hand < hands.end(); hand++)
+        {
+            vector<string>::iterator endOfHand = hand->end();
+            hand->emplace(endOfHand, *cards);
+            if(cards != deck.end()) cards++;
+        }
+    }
     string leadCard = hands[3].at(0);
 
     State state = State(hands, 0 ,hands[3].at(0), 3, {hands[3].at(0)}, {0,0}, 0, {hands[3].at(0)});
 
-    state.removeFromHand(3, hands[3][0]);
+    state.removeFromHand(3, 0);
 
    string optCard = getOptimalCard(state);
 
-   cout<<optCard<<endl<<"Hands -> ";
-   state.printHands();
-   cout<<"Deck -> ";
-   printDeck(deck);
+   cout<<"Optimal Card -> "<<optCard<<endl;
 
 
 
