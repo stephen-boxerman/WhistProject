@@ -9,18 +9,17 @@
 
 using namespace std;
 
-vector<State> states = {};
-vector<int> values = {};
+unordered_map<unsigned long[5], int> state_table;
 
 template < typename type>
-bool findInVector(const std::vector<type>  & vecOfElements, const type & element)
+bool findInList(const list<type>  &listOfElements, const type & element)
 {
     bool result;
 
     // Find given element in vector
-    auto it = std::find(vecOfElements.begin(), vecOfElements.end(), element);
+    auto it = std::find(listOfElements.begin(), listOfElements.end(), element);
 
-    if (it != vecOfElements.end())
+    if (it != listOfElements.end())
     {
         result = true;
     }
@@ -34,12 +33,10 @@ bool findInVector(const std::vector<type>  & vecOfElements, const type & element
 
 int nextPLayer(int player) {return (player + 1) % 4;}
 
-int suitInHand(char suit, vector<string> hand)
+int suitInHand(char suit, list<string> hand)
 {
     int numSuit = 0;
-    vector<string>::iterator it;
-
-    for(it = hand.begin(); it < hand.end(); it++)
+    for(auto it = hand.begin(); it != hand.end(); it++)
     {
         string card = *it;
         if(card[0] == suit)
@@ -51,15 +48,15 @@ int suitInHand(char suit, vector<string> hand)
     return numSuit;
 }
 
-bool isLeagal(State state, string card, vector<string> hand)
+bool isLeagal(State state, string card, list<string> hand)
 {
     string leadCard = state.getLeadCard();
 
     if(card == "") return false;
     else if(leadCard.empty()) return true;
     else if(suitInHand(leadCard[0], hand) == 0) return true;
-    else if(not findInVector(hand, card)) return false;
-    else if(findInVector(state.getCardsPlayed(), card)) return false;
+    else if(not findInList(hand, card)) return false;
+    else if(findInList(state.getCardsPlayed(), card)) return false;
     else if(card[0] != leadCard[0]) return false;
     else return true;
 }
@@ -92,14 +89,21 @@ int minmax(int alpha, int beta, State state)
         int score = state.evalTricks();
         return score;
     }
+    if(not state_table.empty())
+    {
+       if(state_table.find(state.getHash()) != state_table.end())
+       {
+           return state_table[state.getHash()]
+       }
+    }
 
-    vector<string> cards = state.getHand(player);
+    list<string> cards = state.getHand(player);
 
     if(state.getLeadCard() == "")
     {
-        vector<string> hand = state.getHand(player);
+        list<string> hand = state.getHand(player);
 
-        for(vector<string>::iterator it = hand.begin(); it<hand.end(); it++)
+        for(list<string>::iterator it = hand.begin(); it != hand.end(); it++)
         {
             int pos;
             if(*it != "")
@@ -154,6 +158,11 @@ int minmax(int alpha, int beta, State state)
             }
         }
     }
+    if(state.getCardsPlayed().size() > 8)
+    {
+        states.emplace_back(state.getHash());
+        values.emplace_back(bestVal);
+    }
 
     return bestVal;
 
@@ -171,6 +180,12 @@ string getOptimalCard(State state)
     int player = state.getPlayer();
     vector<string> hand = state.getHand(player);
     vector<string>::iterator it;
+
+    cout<<state.getLeadCard()<<endl;
+    for(auto card = hand.begin(); card < hand.end(); card++)
+    {
+        cout<<*card<<" ";
+    }
 
     for(it = hand.begin(); it < hand.end(); it++)
     {
@@ -216,20 +231,20 @@ int main()
     vector<vector<string>> hands = {{}, {}, {}, {}};
 
     const vector<string> SUITS = {"h", "s", "d", "c"};
-    const vector<string> CARD_VALUES = {"2", "5", "8", "J", "A"};
+    const vector<string> CARD_VALUES = {"2", "3", "4", "5", "6", "7", "8", "9", "t", "J", "Q", "K", "A"};
+
     string card;
-    const int MAX_HAND_SIZE = 5;
+    const int MAX_HAND_SIZE = 13;
 
     for(auto suit = SUITS.begin(); suit < SUITS.end(); suit++)
     {
-
-        for (auto value = CARD_VALUES.begin(); value < CARD_VALUES.end(); value++)
+        for (auto val = CARD_VALUES.begin(); val < CARD_VALUES.end(); val++)
         {
-            card = *suit;
-            card.operator+=(*value);
+            card = *suit + *val;
             deck.emplace_back(card);
         }
     }
+
 
     srand(time(NULL));
     random_shuffle(deck.begin(), deck.end());
@@ -248,6 +263,7 @@ int main()
     string leadCard = hands[3].at(0);
 
     State state = State(hands, 0 ,hands[3].at(0), 3, {hands[3].at(0)}, {0,0}, 0, {hands[3].at(0)});
+    state.createHash();
 
     state.removeFromHand(3, 0);
 

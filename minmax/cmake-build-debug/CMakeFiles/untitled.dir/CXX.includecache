@@ -6,25 +6,25 @@
 
 #IncludeRegexTransform: 
 
+/home/CS/users/sboxerma/.linux/WhistProject/minmax/State.cpp
+iostream
+-
+State.h
 /home/CS/users/sboxerma/.linux/WhistProject/minmax/State.h
 string
 -
 vector
 -
-
-/home/CS/users/sboxerma/.linux/WhistProject/minmax/main.cpp
-iostream
--
-string.h
--
-State.h
-/home/CS/users/sboxerma/.linux/WhistProject/minmax/State.h
-ctime
--
-vector
--
 algorithm
 -
-bits/stdc++.h
+map
+-
+fstream
+-
+
+/home/CS/users/sboxerma/.linux/WhistProject/minmax/State.h
+string
+-
+vector
 -
 
