@@ -84,8 +84,8 @@ int findInList(const list<type>  & listOfElements, const type & element)
 
 State::State() {};
 
-State::State(list<string> hands[4], int player, string leadCard, int leadingPlayer, list<string> trick, int points[2],
-        int numTricks, list<string> cardsPlayed, string restriction, string bid)
+State::State(list<string> (&hands)[4], int player, string leadCard, int leadingPlayer, list<string> &trick, int (&points)[2],
+        int numTricks, list<string> &cardsPlayed, string restriction, string bid)
 {
     this->player = player;
     this->owningPlayer = this->player;
@@ -120,17 +120,18 @@ void State::setLeadCard(string card) {this->leadCard = card;}
 
 string State::getLeadCard() {return this->leadCard;}
 
-
+list<string> * State::getCardsPlayed() {return &(this->cardsPlayed);}
 
 void State::removeFromHand(int hand, string card)
 {
    this -> hands[hand].remove(card);
 }
 
-void State::addToHand(int hand, string card)
+void State::addToHand(int hand, string card, int pos)
 {
-    this->hands[hand].emplace_back(card);
-    //hands[hand].emplace(hands[hand].begin() + position, card);
+    list<string>::iterator it = hands[hand].begin();
+    advance(it, pos-1);
+    if(hands[hand].size() < 4) this->hands[hand].insert(it, card);
 }
 
 void State::addToCardsPlayed(string card) {this -> cardsPlayed.emplace_back(card);}
@@ -246,7 +247,7 @@ void State::setOwningPlayer(int owningPlayer)
 
 void State::createHash()
 {
-    unsigned long hashSum = 0;
+    unsigned long long hashSum = 0;
 
     for(int i = 0; this->hands->size(); i++)
     {
@@ -254,11 +255,11 @@ void State::createHash()
         for(auto card = this->hands[i].begin(); card != this->hands[i].end(); card++)
         {
             string c = *card;
-            unsigned long val = DECK_MAP.at(c);
+            unsigned long long val = DECK_MAP.at(c);
             hashSum += val;
         }
 
-        this -> hash[i] = hashSum;
+        this -> hash.push_back(hashSum);
 
         hashSum = 0;
     }
@@ -270,35 +271,49 @@ void State::createHash()
         if(*card != "")
         {
             string c = *card;
-            unsigned long val = DECK_MAP.at(c);
+            unsigned long long val = DECK_MAP.at(c);
             hashSum += val;
         }
 
     }
 
-    hashSum += ((unsigned long)this->player) << 52;
-    hashSum += ((unsigned long)this->leadingPlayer) << 54;
+    hashSum += ((unsigned long long)this->player) << 52;
+    hashSum += ((unsigned long long)this->leadingPlayer) << 54;
 
     unsigned long hashLeadCard = findInVector(DECK, this->leadCard);
     hashLeadCard = hashLeadCard << 56;
 
     hashSum += hashLeadCard;
 
-    this -> hash[5] = hashSum;
+    this -> hash.push_back(hashSum);
 }
 
-State State::copy()
+State * State::copy()
 {
-    State newState = State(this->hands, this->player, this->leadCard, this->leadingPlayer, this->trick,
-                           this->points,  this->numTricks, this->cardsPlayed, this->restriction, this->bid);
 
-    newState.setOwningPlayer(this->owningPlayer);
-    newState.createHash();
+    State * newState = new State;
+
+    newState->player = this->player;
+    newState->owningPlayer = this->player;
+    newState->leadCard = this->leadCard;
+    newState->leadingPlayer = this->leadingPlayer;
+    newState->numTricks = this->numTricks;
+    newState->restriction = this->restriction;
+    newState->bid = this->bid;
+
+    newState->hands[0] = this->hands[0];
+    newState->hands[1] = this->hands[1];
+    newState->hands[2] = this->hands[2];
+    newState->hands[3] = this->hands[3];
+    newState->trick.operator=(this->trick);
+    newState->cardsPlayed.operator=(this->cardsPlayed);
+    newState->points[0] = this->points[0];
+    newState->points[1] = this->points[1];
 
     return newState;
 }
 
-unsigned long * State::getHash()
+list<unsigned long long> * State::getHash()
 {
-    return this->hash;
+    return &this->hash;
 }
