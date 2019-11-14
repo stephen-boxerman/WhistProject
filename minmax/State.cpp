@@ -249,10 +249,9 @@ void State::createHash()
 {
     unsigned long long hashSum = 0;
 
-    for(int i = 0; this->hands->size(); i++)
+    for(int i = 0; i < 4; i++)
     {
-
-        for(auto card = this->hands[i].begin(); card != this->hands[i].end(); card++)
+        for(list<string>::iterator card = this->hands[i].begin(); card != this->hands[i].end(); card++)
         {
             string c = *card;
             unsigned long long val = DECK_MAP.at(c);
@@ -309,6 +308,8 @@ State * State::copy()
     newState->cardsPlayed.operator=(this->cardsPlayed);
     newState->points[0] = this->points[0];
     newState->points[1] = this->points[1];
+
+    newState->createHash();
 
     return newState;
 }

@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/CS/users/sboxerma/.linux/WhistProject/minmax/State.h
+/home/stephen/WhistProject/minmax/State.h
 string
 -
 list
@@ -14,13 +14,13 @@ list
 array
 -
 
-/home/CS/users/sboxerma/.linux/WhistProject/minmax/main.cpp
+/home/stephen/WhistProject/minmax/main.cpp
 iostream
 -
 string.h
 -
 State.h
-/home/CS/users/sboxerma/.linux/WhistProject/minmax/State.h
+/home/stephen/WhistProject/minmax/State.h
 ctime
 -
 vector
@@ -28,5 +28,7 @@ vector
 algorithm
 -
 bits/stdc++.h
+-
+functional
 -
 

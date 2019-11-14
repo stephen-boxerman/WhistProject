@@ -5,12 +5,13 @@
 #include <vector>
 #include <algorithm>
 #include <bits/stdc++.h>
+#include <functional>
 
 
 using namespace std;
-unsigned long long hash_combine(unsigned long long seed, unsigned long long item)
+unsigned long long hash_combine(size_t &seed, unsigned long long item)
 {
-    return seed * item;
+    return (seed + item) * (size_t)29;
 }
 
 struct key
@@ -63,24 +64,17 @@ struct key
 
 struct hash_key
 {
-    unsigned long long operator()(key const& Key) const
+    size_t operator()(key const& Key) const
     {
-        unsigned long long hash = (unsigned long long) 0;
-        unsigned long long seed = (unsigned long long) 29;
-        hash += Key.hand1;
-        hash = hash_combine(seed, hash);
+        std::hash<unsigned long long> long_hash;
 
-        hash += Key.hand2;
-        hash = hash_combine(seed, hash);
-
-        hash += Key.hand3;
-        hash = hash_combine(seed, hash);
-
-        hash += Key.hand4;
-        hash = hash_combine(seed, hash);
-
-        hash += Key.stateInfo;
-        hash = hash_combine(seed, hash);
+        size_t seed = 0;
+        seed += hash_combine(seed, Key.hand1);
+        seed += hash_combine(seed, Key.hand2);
+        seed += hash_combine(seed, Key.hand3);
+        seed += hash_combine(seed, Key.hand4);
+        seed += hash_combine(seed, Key.stateInfo);
+        return seed;
 
     }
 
@@ -170,12 +164,10 @@ int minmax(int alpha, int beta, State * state)
     }
     if(not state_table.empty())
     {
-
-        if(state_table.find(Key) != state_table.end())
-        {
-            cout<<"Bucket# is -> "<<state_table.bucket(Key)<<endl;
-            return state_table[Key];
-        }
+       if(state_table.count(Key) != 0)
+       {
+           return state_table[Key];
+       }
     }
 
     list<string> cards = state->getHand(player);
@@ -239,10 +231,9 @@ int minmax(int alpha, int beta, State * state)
             }
         }
     }
-    if(state->getCardsPlayed()->size() > 26)
-    {
+    if(state->getCardsPlayed()->size() > 13)
         state_table[Key] = bestVal;
-    }
+    delete(state);
 
     return bestVal;
 
@@ -357,6 +348,8 @@ int main()
     State * state = new State(hands, 0 , leadCard, 3, trick, points, 0, cardsPlayed);
 
     state->removeFromHand(3, leadCard);
+
+    state->createHash();
 
    string optCard = getOptimalCard(state);
 
