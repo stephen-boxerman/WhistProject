@@ -155,12 +155,14 @@ int minmax(int alpha, int beta, State * state) {
 
     if (state->handsAreEmpty()) {
         int score = state->evalTricks();
+        delete(state);
         return score;
     }
     if(not state_table.empty())
     {
         if(state_table.count(Key) != 0)
         {
+            delete(state);
             return state_table[Key];
         }
     }
@@ -202,7 +204,7 @@ int minmax(int alpha, int beta, State * state) {
                 int value = minmax(alpha, beta, state->copy());
                 state->addToHand(player, card, pos);
                 state->removeFromTrick();
-                state->removeFromCardsPlayed();
+                state->removeFromCardsPlayed(card);
 
                 if (isMax) {
                     if (value > beta) {
@@ -227,7 +229,8 @@ int minmax(int alpha, int beta, State * state) {
         }
     }
 
-    state_table[Key] = bestVal;
+    if(state->getCardsPlayed()->size() >26)
+        state_table[Key] = bestVal;
 
     delete(state);
     return bestVal;
@@ -349,7 +352,7 @@ void printDeck(vector<string> deck)
 int main()
 {
     vector<string> deck;
-    list<string> hands[4] = {{}, {}, {}, {}};
+    unordered_set<string> hands[4] = {{}, {}, {}, {}};
 
     const vector<string> SUITS = {"h", "s", "d", "c"};
     const vector<string> CARD_VALUES = {"2", "3", "4", "5", "6", "7", "8", "9", "t", "J", "Q", "K", "A"};

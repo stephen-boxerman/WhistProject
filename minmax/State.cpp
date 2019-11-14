@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <map>
 #include <fstream>
+#import <unordered_set>
 
 using namespace std;
 
@@ -84,23 +85,23 @@ int findInList(const list<type>  & listOfElements, const type & element)
 
 State::State() {};
 
-State::State(list<string> (&hands)[4], int player, string leadCard, int leadingPlayer, list<string> &trick, int (&points)[2],
+State::State(unordered_set<string> (&hands)[4], int player, string leadCard, int leadingPlayer, list<string> &trick, int (&points)[2],
         int numTricks, list<string> &cardsPlayed, string restriction, string bid)
 {
     this->player = player;
     this->owningPlayer = this->player;
     this->leadCard = leadCard;
     this->leadingPlayer = leadingPlayer;
-    this->numTricks = numTricks;
+//    this->numTricks = numTricks;
     this->restriction = restriction;
     this->bid = bid;
 
-    this->hands[0] = hands[0];
-    this->hands[1] = hands[1];
-    this->hands[2] = hands[2];
-    this->hands[3] = hands[3];
+    this->hands[0] = unordered_set<string>(hands[0].begin(), hands[0].end());
+    this->hands[1] = unordered_set<string>(hands[1].begin(), hands[1].end());
+    this->hands[2] = unordered_set<string>(hands[2].begin(), hands[2].end());
+    this->hands[3] = unordered_set<string>(hands[3].begin(), hands[3].end());
     this->trick.operator=(trick);
-    this->cardsPlayed.operator=(cardsPlayed);
+    this->cardsPlayed= unordered_set<string>(cardsPlayed.begin(), cardsPlayed.end());
     this->points[0] = points[0];
     this->points[1] = points[1];
 }
@@ -110,7 +111,7 @@ State::~State() noexcept(false)
 
 }
 
-list<string> State::getHand(int hand) {return this->hands[hand];}
+unordered_set<string> State::getHand(int hand) {return this->hands[hand];}
 
 void State::setPlayer(int player) {this->player = player;}
 
@@ -120,7 +121,7 @@ void State::setLeadCard(string card) {this->leadCard = card;}
 
 string State::getLeadCard() {return this->leadCard;}
 
-list<string> * State::getCardsPlayed() {return &(this->cardsPlayed);}
+unordered_set<string> * State::getCardsPlayed() {return &(this->cardsPlayed);}
 
 void State::setRestriction(string res) {this -> restriction = res;}
 
@@ -128,21 +129,19 @@ void State::setBid(string bid) {this->bid = bid;}
 
 void State::removeFromHand(int hand, string card)
 {
-   this -> hands[hand].remove(card);
+   this -> hands[hand].erase(card);
 }
 
 void State::addToHand(int hand, string card, int pos)
 {
-    list<string>::iterator it = hands[hand].begin();
-    advance(it, pos-1);
-    if(hands[hand].size() < 4) this->hands[hand].insert(it, card);
+    if(hands[hand].size() < 4) this->hands[hand].insert(card);
 }
 
-void State::addToCardsPlayed(string card) {this -> cardsPlayed.emplace_back(card);}
+void State::addToCardsPlayed(string card) {this -> cardsPlayed.insert(card);}
 
 void State::addToTrick(string card) {this -> trick.emplace_back(card);}
 
-void State::removeFromCardsPlayed() {this->cardsPlayed.pop_back();}
+void State::removeFromCardsPlayed(string card) {this->cardsPlayed.erase(card);}
 
 void State::removeFromTrick() {this -> trick.pop_back();}
 
@@ -264,7 +263,7 @@ void State::createHash()
 
     for(int i = 0; i < 4; i++)
     {
-        for(list<string>::iterator card = this->hands[i].begin(); card != this->hands[i].end(); card++)
+        for(unordered_set<string>::iterator card = this->hands[i].begin(); card != this->hands[i].end(); card++)
         {
             string c = *card;
             unsigned long long val = DECK_MAP.at(c);

@@ -8,6 +8,7 @@
 #include <string>
 #include <list>
 #include <array>
+#include <unordered_set>
 
 using namespace std;
 
@@ -15,40 +16,40 @@ using namespace std;
 class State
 {
     private:
-        list<string> hands[4];
-        int owningPlayer;
-        int player;
-        string leadCard;
-        int leadingPlayer;
+        unordered_set<string> hands[4];
+        unordered_set<string> cardsPlayed;
+        list<unsigned long long> hash;
         list<string> trick;
-        int points[2];
-        int numTricks;
-        list<string> cardsPlayed;
         string restriction;
         string bid;
+        string leadCard;
+        int points[2];
+        int owningPlayer;
+        int player;
+        int leadingPlayer;
+        int numTricks;
         int findWinningCard();
         list<int> findSuit(char suit, int defaultVal = -1);
         void findWinningPlayer();
-        list<unsigned long long> hash;
 
     public:
         State();
         ~State() noexcept(false);
-        State(list<string> (&hands)[4], int player, string leadCard, int leadingPlayer, list<string> &trick, int (&points)[2],
+        State(unordered_set<string> (&hands)[4], int player, string leadCard, int leadingPlayer, list<string> &trick, int (&points)[2],
                  int numTricks, list<string> &cardsPlayed, string restriction = "acs", string bid = "p");
-        list<string> getHand(int hand);
+        unordered_set<string> getHand(int hand);
         void setPlayer(int player);
         int getPlayer();
         void setLeadCard(string card);
         string getLeadCard();
-        list<string> * getCardsPlayed();
+        unordered_set<string> * getCardsPlayed();
         void setRestriction(string res);
         void setBid(string bid);
 
         void removeFromHand(int hand, string card);
         void addToHand(int hand, string card, int pos);
         void addToCardsPlayed(string card);
-        void removeFromCardsPlayed();
+        void removeFromCardsPlayed(string card);
         void addToTrick(string card);
         void removeFromTrick();
         void testTrick();

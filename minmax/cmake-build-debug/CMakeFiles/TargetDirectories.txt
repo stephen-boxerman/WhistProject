@@ -1,3 +1,0 @@
-/home/stephen/WhistProject/minmax/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/stephen/WhistProject/minmax/cmake-build-debug/CMakeFiles/untitled.dir
-/home/stephen/WhistProject/minmax/cmake-build-debug/CMakeFiles/edit_cache.dir
