@@ -105,7 +105,7 @@ State::State(list<string> (&hands)[4], int player, string leadCard, int leadingP
     this->points[1] = points[1];
 }
 
-State::~State()
+State::~State() noexcept(false)
 {
 
 }
@@ -121,6 +121,10 @@ void State::setLeadCard(string card) {this->leadCard = card;}
 string State::getLeadCard() {return this->leadCard;}
 
 list<string> * State::getCardsPlayed() {return &(this->cardsPlayed);}
+
+void State::setRestriction(string res) {this -> restriction = res;}
+
+void State::setBid(string bid) {this->bid = bid;}
 
 void State::removeFromHand(int hand, string card)
 {
@@ -236,13 +240,22 @@ bool State::handsAreEmpty()
 int State::evalTricks()
 {
     int leadingTeam = this->owningPlayer % 2;
-    int score = this->points[leadingTeam];
-    return score;
-}
+    int pointsMade = this->points[leadingTeam];
+    int trickGoal;
+    int score = 0;
+    pointsMade -= 6;
+    if(this->bid != "p")
+    {
+        trickGoal = (int)bid[0];
+        if(pointsMade >= trickGoal) {score+=pointsMade;}
+        else {score -= trickGoal;}
+    }
+    else if(pointsMade > 0) {score += pointsMade;}
 
-void State::setOwningPlayer(int owningPlayer)
-{
-    this->owningPlayer = owningPlayer;
+    if(this->bid.size() == 3) {score *= 2;}
+
+    return score;
+
 }
 
 void State::createHash()

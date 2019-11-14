@@ -132,12 +132,11 @@ bool isLeagal(State * state, string card, list<string> hand)
     else return true;
 }
 
-int minmax(int alpha, int beta, State * state)
-{
+int minmax(int alpha, int beta, State * state) {
     bool isMax;
     int bestVal;
     int index = -1;
-    list<unsigned long long> * hash = state->getHash();
+    list<unsigned long long> *hash = state->getHash();
     struct key Key = key(*hash);
 
     state->setPlayer(nextPLayer(state->getPlayer()));
@@ -148,26 +147,22 @@ int minmax(int alpha, int beta, State * state)
 
     isMax = (player == 0 or player == 2);
 
-    if(isMax)
-    {
+    if (isMax) {
         bestVal = numeric_limits<int>::min();
-    }
-    else
-    {
+    } else {
         bestVal = numeric_limits<int>::max();
     }
 
-    if(state->handsAreEmpty())
-    {
+    if (state->handsAreEmpty()) {
         int score = state->evalTricks();
         return score;
     }
     if(not state_table.empty())
     {
-       if(state_table.count(Key) != 0)
-       {
-           return state_table[Key];
-       }
+        if(state_table.count(Key) != 0)
+        {
+            return state_table[Key];
+        }
     }
 
     list<string> cards = state->getHand(player);
@@ -231,13 +226,15 @@ int minmax(int alpha, int beta, State * state)
             }
         }
     }
-    if(state->getCardsPlayed()->size() > 13)
-        state_table[Key] = bestVal;
-    delete(state);
 
+    state_table[Key] = bestVal;
+
+    delete(state);
     return bestVal;
 
 }
+
+
 
 
 string getOptimalCard(State * state)
@@ -289,6 +286,56 @@ string getOptimalCard(State * state)
     }
 
     return optCard;
+}
+
+string getOptimalBid(State * state)
+{
+    const list<string> TRUMP = {"h", "s", "d", "c"};
+    const list<string> NO_TRUMP = {"asc", "desc"};
+    const list<string> BIDS = {"p", "1", "1no", "2", "2no", "3", "3no",
+                               "4", "4no", "5", "5no", "6", "6no", "7", "7no"};
+
+    int alpha = numeric_limits<int>::min();
+    int beta = numeric_limits<int>::max();
+
+    int value = alpha;
+    string optBid;
+
+    for(auto bid = BIDS.begin(); bid != BIDS.end(); bid++)
+    {
+        state -> setBid(*bid);
+
+        if(*bid == "p")
+        {
+            value = minmax(alpha, beta, state->copy());
+        }
+
+        else if(distance(BIDS.begin(), bid) % 2 == 0)
+        {
+            for(auto res = NO_TRUMP.begin(); res != NO_TRUMP.end(); res++)
+            {
+                state->setRestriction(*res);
+                value = minmax(alpha, beta, state->copy());
+
+            }
+        }
+        else
+        {
+            for(auto trump = TRUMP.begin(); trump != TRUMP.end(); trump++)
+            {
+                state->setRestriction(*trump);
+                value = minmax(alpha, beta, state->copy());
+            }
+        }
+
+        if(value > alpha)
+        {
+            alpha = value;
+            optBid = *bid;
+        }
+
+    }
+
 }
 
 void printDeck(vector<string> deck)

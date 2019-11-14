@@ -30,11 +30,10 @@ class State
         list<int> findSuit(char suit, int defaultVal = -1);
         void findWinningPlayer();
         list<unsigned long long> hash;
-        void setOwningPlayer(int owningPlayer);
 
     public:
         State();
-        ~State();
+        ~State() noexcept(false);
         State(list<string> (&hands)[4], int player, string leadCard, int leadingPlayer, list<string> &trick, int (&points)[2],
                  int numTricks, list<string> &cardsPlayed, string restriction = "acs", string bid = "p");
         list<string> getHand(int hand);
@@ -43,6 +42,8 @@ class State
         void setLeadCard(string card);
         string getLeadCard();
         list<string> * getCardsPlayed();
+        void setRestriction(string res);
+        void setBid(string bid);
 
         void removeFromHand(int hand, string card);
         void addToHand(int hand, string card, int pos);
