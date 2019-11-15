@@ -106,7 +106,7 @@ State::State(unordered_set<string> (&hands)[4], int player, string leadCard, int
     this->points[1] = points[1];
 }
 
-State::~State() noexcept(false)
+State::~State()
 {
 
 }
@@ -132,9 +132,10 @@ void State::removeFromHand(int hand, string card)
    this -> hands[hand].erase(card);
 }
 
-void State::addToHand(int hand, string card, int pos)
+void State::addToHand(int hand, string card)
 {
-    if(hands[hand].size() < 4) this->hands[hand].insert(card);
+    auto isFound = hands[hand].find(card);
+    if(isFound != hands[hand].end()) this-> hands[hand].insert(card);
 }
 
 void State::addToCardsPlayed(string card) {this -> cardsPlayed.insert(card);}
@@ -143,7 +144,7 @@ void State::addToTrick(string card) {this -> trick.emplace_back(card);}
 
 void State::removeFromCardsPlayed(string card) {this->cardsPlayed.erase(card);}
 
-void State::removeFromTrick() {this -> trick.pop_back();}
+void State::removeFromTrick() {if(not trick.empty()) this -> trick.pop_back();}
 
 list<int> State::findSuit(char suit, int defaultVal)
 {
@@ -242,7 +243,7 @@ int State::evalTricks()
     int pointsMade = this->points[leadingTeam];
     int trickGoal;
     int score = 0;
-    pointsMade -= 6;
+    //pointsMade -= 6;
     if(this->bid != "p")
     {
         trickGoal = (int)bid[0];
@@ -298,6 +299,7 @@ void State::createHash()
 
     this -> hash.push_back(hashSum);
 }
+
 
 State * State::copy()
 {

@@ -34,7 +34,7 @@ class State
 
     public:
         State();
-        ~State() noexcept(false);
+        ~State();
         State(unordered_set<string> (&hands)[4], int player, string leadCard, int leadingPlayer, list<string> &trick, int (&points)[2],
                  int numTricks, list<string> &cardsPlayed, string restriction = "acs", string bid = "p");
         unordered_set<string> getHand(int hand);
@@ -45,9 +45,11 @@ class State
         unordered_set<string> * getCardsPlayed();
         void setRestriction(string res);
         void setBid(string bid);
+        int * getPoints();
+        void setPoints(int (&points)[2]);
 
         void removeFromHand(int hand, string card);
-        void addToHand(int hand, string card, int pos);
+        void addToHand(int hand, string card);
         void addToCardsPlayed(string card);
         void removeFromCardsPlayed(string card);
         void addToTrick(string card);

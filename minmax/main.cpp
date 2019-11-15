@@ -82,7 +82,10 @@ struct hash_key
 
 unordered_map<key, int, hash_key> state_table;
 
-template < typename type>
+
+
+template <typename type>
+
 bool findInList(const list<type>  &listOfElements, const type & element)
 {
     bool result;
@@ -104,7 +107,7 @@ bool findInList(const list<type>  &listOfElements, const type & element)
 
 int nextPLayer(int player) {return (player + 1) % 4;}
 
-int suitInHand(char suit, list<string> hand)
+int suitInHand(char suit, unordered_set<string> hand)
 {
     int numSuit = 0;
     for(auto it = hand.begin(); it != hand.end(); it++)
@@ -119,15 +122,14 @@ int suitInHand(char suit, list<string> hand)
     return numSuit;
 }
 
-bool isLeagal(State * state, string card, list<string> hand)
+bool isLeagal(State * state, string card, int hand)
 {
     string leadCard = state->getLeadCard();
 
     if(card == "") return false;
     else if(leadCard.empty()) return true;
-    else if(suitInHand(leadCard[0], hand) == 0) return true;
-    else if(not findInList(hand, card)) return false;
-    else if(findInList(*state->getCardsPlayed(), card)) return false;
+    else if(suitInHand(leadCard[0], state->getHand(hand)) == 0) return true;
+    else if(state->getCardsPlayed()->find(card) != state->getCardsPlayed()->end()) return false;
     else if(card[0] != leadCard[0]) return false;
     else return true;
 }
@@ -155,57 +157,43 @@ int minmax(int alpha, int beta, State * state) {
 
     if (state->handsAreEmpty()) {
         int score = state->evalTricks();
-        delete(state);
         return score;
     }
     if(not state_table.empty())
     {
         if(state_table.count(Key) != 0)
         {
-            delete(state);
             return state_table[Key];
         }
     }
 
-    list<string> cards = state->getHand(player);
+    unordered_set<string> cards = state->getHand(player);
 
     if(state->getLeadCard() == "")
     {
-        list<string> hand = state->getHand(player);
-
-        for(list<string>::iterator it = hand.begin(); it != hand.end(); it++)
-        {
-            int pos;
-            if(*it != "")
-            {
-                pos = (int)distance(hand.begin(), it);
-                string card = *it;
-                state->addToCardsPlayed(card);
-                state->addToTrick(card);
-                state->setLeadCard(card);
-                state->removeFromHand(player, card);
-                bestVal = minmax(alpha, beta, state->copy());
-                break;
-            }
-        }
+        string card = *(state->getHand(player).begin());
+        state->addToCardsPlayed(card);
+        state->addToTrick(card);
+        state->setLeadCard(card);
+        state->removeFromHand(player, card);
+        bestVal = minmax(alpha, beta, state);
     }
 
     else
     {
-        for (list<string>::iterator it = cards.begin(); it != cards.end(); it++) {
+        for (auto it = cards.begin(); it != cards.end(); it++) {
             string card = *it;
             int pos;
 
-            if (isLeagal(state, card, cards)) {
-                pos = (int)distance(cards.begin(), it);
+            if (isLeagal(state, card, player)) {
                 state->addToCardsPlayed(card);
                 state->addToTrick(card);
                 state->removeFromHand(player, card);
-                int value = minmax(alpha, beta, state->copy());
-                state->addToHand(player, card, pos);
+                int value = minmax(alpha, beta, state);
+                state->setPlayer(player);
+                state->addToHand(player, card);
                 state->removeFromTrick();
                 state->removeFromCardsPlayed(card);
-
                 if (isMax) {
                     if (value > beta) {
                         bestVal = value;
@@ -224,15 +212,12 @@ int minmax(int alpha, int beta, State * state) {
                     }
                 }
 
-
             }
         }
     }
 
     if(state->getCardsPlayed()->size() >26)
         state_table[Key] = bestVal;
-
-    delete(state);
     return bestVal;
 
 }
@@ -249,22 +234,14 @@ string getOptimalCard(State * state)
     int value;
 
     int player = state->getPlayer();
-    list<string> hand = state->getHand(player);
+    unordered_set<string> hand = state->getHand(player);
     vector<string>::iterator it;
-
-    cout<<state->getLeadCard()<<endl;
-    cout<<"Hand -> ";
-    for(auto card = hand.begin(); card != hand.end(); card++)
-    {
-        cout<<*card<<" ";
-    }
-    cout<<endl;
 
     for(auto it = hand.begin(); it != hand.end(); it++)
     {
         int pos;
         string card = *it;
-        if(isLeagal(state, card, hand))
+        if(isLeagal(state, card, player))
         {
             string card = *it;
             cout<<card<<endl;
@@ -273,8 +250,8 @@ string getOptimalCard(State * state)
             state->addToTrick(card);
             state->removeFromHand(player, card);
             value = minmax(alpha, beta, state->copy());
-            state->addToHand(player, card, pos);
-            state->removeFromCardsPlayed();
+            state->addToHand(player, card);
+            state->removeFromCardsPlayed(card);
             state->removeFromTrick();
 
             cout<<"Card -> "<<card<<", Value -> "<<value<<endl;
@@ -301,12 +278,16 @@ string getOptimalBid(State * state)
     int alpha = numeric_limits<int>::min();
     int beta = numeric_limits<int>::max();
 
-    int value = alpha;
+    int bestVal = alpha;
+
+    int value;
     string optBid;
 
     for(auto bid = BIDS.begin(); bid != BIDS.end(); bid++)
     {
         state -> setBid(*bid);
+
+        cout<<(*bid)<<endl;
 
         if(*bid == "p")
         {
@@ -331,13 +312,15 @@ string getOptimalBid(State * state)
             }
         }
 
-        if(value > alpha)
+        if(value > bestVal)
         {
-            alpha = value;
+            bestVal = value;
             optBid = *bid;
         }
 
     }
+
+    return optBid;
 
 }
 
@@ -379,7 +362,7 @@ int main()
     {
         for (int i = 0; i < 4; i++)
         {
-            hands[i].push_back(*cards);
+            hands[i].insert(*cards);
             if(cards != deck.end()) cards++;
         }
     }
@@ -387,7 +370,7 @@ int main()
 //    State::State(list<string> (&hands)[4], int player, string leadCard, int leadingPlayer, list<string> &trick, int points[2],
 //        int numTricks, list<string> &cardsPlayed, string restriction, string bid)
 
-    string leadCard = hands[3].front();
+    string leadCard = *(hands[3].begin());
     list<string> trick;
     list<string> cardsPlayed;
     int points[2] = {0,0};
@@ -404,6 +387,10 @@ int main()
    string optCard = getOptimalCard(state);
 
    cout<<"Optimal Card -> "<<optCard<<endl;
+
+//    string optBid = getOptimalBid(state);
+//
+//    cout<<optBid<<endl;
 
 
 

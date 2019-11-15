@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/stephen/WhistProject/minmax/State.cpp
+iostream
+-
+State.h
+/home/stephen/WhistProject/minmax/State.h
+string
+-
+vector
+-
+algorithm
+-
+map
+-
+fstream
+-
+unordered_set
+-
+
+/home/stephen/WhistProject/minmax/State.h
+string
+-
+list
+-
+array
+-
+unordered_set
+-
+
