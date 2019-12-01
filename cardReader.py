@@ -10,6 +10,40 @@ import pyqrcode
 import numpy as np
 import cv2 as cv
 from pyzbar import pyzbar as qr
+import os
+
+
+def load_images_from_folder(folder):
+    """
+    Courtesy of https://stackoverflow.com/questions/30230592/loading-all-images-using-imread-from-a-given-folder
+    Modified for my own use
+    """
+    images = []
+    names = []
+    for filename in os.listdir(folder):
+        img = cv.imread(os.path.join(folder, filename))
+        print(filename)
+        if img is not None:
+            images.append(img)
+            names.append(filename)
+    return images, names
+
+# Global Variables
+#region
+ZOOM=4
+cardW = int(57 * ZOOM)
+cardH = int(87 * ZOOM)
+cornerXmin = int(2 * ZOOM)
+cornerXmax = int(10.5 * ZOOM)
+cornerYmin = int(2.5 * ZOOM)
+cornerYmax = int(23 * ZOOM)
+
+refCard=np.array([[0,0],[cardW,0],[cardW,cardH],[0,cardH]],dtype=np.float32)
+refCardRot=np.array([[cardW,0],[cardW,cardH],[0,cardH],[0,0]],dtype=np.float32)
+refCornerHL=np.array([[cornerXmin,cornerYmin],[cornerXmax,cornerYmin],[cornerXmax,cornerYmax],[cornerXmin,cornerYmax]],dtype=np.float32)
+refCornerLR=np.array([[cardW-cornerXmax,cardH-cornerYmax],[cardW-cornerXmin,cardH-cornerYmax],[cardW-cornerXmin,cardH-cornerYmin],[cardW-cornerXmax,cardH-cornerYmin]],dtype=np.float32)
+refCorners=np.array([refCornerHL,refCornerLR])
+#endregion    
 
 def cameraInit():
     print("Begin opening camera")
@@ -30,6 +64,9 @@ def genQR(content, location):
     generated_qr = pyqrcode.create(content)
     generated_qr.png(location, scale=6)
 
+def findQR(frame):
+    found_codes = qr_read(frame)
+    return found_codes
 
 def qr_read(image):
     code = qr.decode(image)
@@ -54,22 +91,7 @@ def extract_card(frame, output_fn=None, min_focus=120, debug=False):
     Taken from https://github.com/geaxgx/playing-card-detection/blob/master/creating_playing_cards_dataset.ipynb
     Modified for my own use
     """
-    # Global Variables
-    #region
-    ZOOM=4
-    cardW = int(57 * ZOOM)
-    cardH = int(87 * ZOOM)
-    cornerXmin = int(2 * ZOOM)
-    cornerXmax = int(10.5 * ZOOM)
-    cornerYmin = int(2.5 * ZOOM)
-    cornerYmax = int(23 * ZOOM)
-
-    refCard=np.array([[0,0],[cardW,0],[cardW,cardH],[0,cardH]],dtype=np.float32)
-    refCardRot=np.array([[cardW,0],[cardW,cardH],[0,cardH],[0,0]],dtype=np.float32)
-    refCornerHL=np.array([[cornerXmin,cornerYmin],[cornerXmax,cornerYmin],[cornerXmax,cornerYmax],[cornerXmin,cornerYmax]],dtype=np.float32)
-    refCornerLR=np.array([[cardW-cornerXmax,cardH-cornerYmax],[cardW-cornerXmin,cardH-cornerYmax],[cardW-cornerXmin,cardH-cornerYmin],[cardW-cornerXmax,cardH-cornerYmin]],dtype=np.float32)
-    refCorners=np.array([refCornerHL,refCornerLR])
-
+    
     bord_size=2
     alphamask=np.ones((cardH,cardW),dtype=np.uint8)*255
     cv.rectangle(alphamask,(0,0),(cardW-1,cardH-1),0,bord_size)
@@ -77,8 +99,6 @@ def extract_card(frame, output_fn=None, min_focus=120, debug=False):
     cv.line(alphamask,(cardW-bord_size*3,0),(cardW,bord_size*3),0,bord_size)
     cv.line(alphamask,(0,cardH-bord_size*3),(bord_size*3,cardH),0,bord_size)
     cv.line(alphamask,(cardW-bord_size*3,cardH),(cardW,cardH-bord_size*3),0,bord_size)
-    if debug: cv.imshow("alphamask", alphamask)
-    #endregion
 
     imgwarp=None
     # Check if the image is too blurry
@@ -97,9 +117,9 @@ def extract_card(frame, output_fn=None, min_focus=120, debug=False):
 
     # Edge detection
     edges = cv.Canny(gray, 30, 200)
-    se = np.ones((3, 3), dtype='uint8')
+    close_kernel = np.ones((3, 3), dtype='uint8')
     # Close any gaps that may have formed during edge detection
-    # edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, se)
+    edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, close_kernel)
     if debug: cv.imshow("Edges", edges)
     # Find contours
     cnts,_ = cv.findContours(edges.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -113,13 +133,15 @@ def extract_card(frame, output_fn=None, min_focus=120, debug=False):
     # Create an image mask based on the detected cards to pull out their information later
     mask = np.zeros(frame.shape[:2], np.uint8)
     cv.drawContours(mask, [cnt], -1, 255, -1)
-    mask = cv.morphologyEx(mask, cv.MORPH_OPEN, se)
+    open_kernel = np.ones((9, 9), dtype='uint8')
+    mask = cv.morphologyEx(mask, cv.MORPH_OPEN, open_kernel)
     if debug: cv.imshow("Mask", mask)
     # Make a NEW contour set from the mask
     cnts,_ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    cnt = sorted(cnts, key=cv.contourArea, reverse=True)[0]
     # Check for rectangle shape
     # TODO: Find out if this is actually necessary for our system.
-    rect = cv.minAreaRect(cnts[0])
+    rect = cv.minAreaRect(cnt)
     box = cv.boxPoints(rect)
     box = np.int0(box)
     areaCnt = cv.contourArea(cnt)
@@ -157,13 +179,17 @@ def extract_card(frame, output_fn=None, min_focus=120, debug=False):
         if output_fn is not None:
             cv.imwrite(output_fn, imgwarp)
 
-    k=-1
     if debug:
         cv.drawContours(frame, [box], -1, (0, 0, 0), 2)
         cv.imshow("Frame", frame)
-        while(k!=27):
-            k = cv.waitKey(5) & 0xFF
+        
     return valid, imgwarp
+
+def corner_grab(extract, output_fn=None, debug=True):
+    cropped = extract[0:cornerYmax, 0:cornerXmax]
+    if output_fn is not None:
+        cv.imwrite(output_fn, cropped)
+    if debug: cv.imshow("Cropped", cropped)
 
 # Retrieve individual frames from a video input
 def video(cap):
@@ -181,11 +207,6 @@ def video(cap):
     # Display the resulting frame
     # plt.imshow(frame), plt.show()
     # print(found_codes)
-    return found_codes
-
-
-def findQR(frame):
-    found_codes = qr_read(frame)
     return found_codes
 
 def card_detection(frame):
@@ -258,13 +279,37 @@ def videoHost():
     #Close out the display window.
     cv.destroyAllWindows()
 
-def generateCardFiles():
-    image = cv.imread("images/playingCardImages/*.png")
-    print(image)
+def generateCardFiles(debug=False):
+    if debug: print("Loading images")
+    images, names = load_images_from_folder("images/playingCardImages")
+    for i in range(0,len(images)):
+        if debug:
+            cv.imshow(names[i], images[i])
+            print(names[i][:-4])
+        valid, imgwarp = extract_card(images[i], output_fn="images/genCards/" + names[i], debug=debug)
+        if valid:
+            corner_grab(imgwarp, output_fn="images/genCards/" + names[i][:-4]+".png", debug=debug)
+    if debug:
+        k=-1
+        while(k!=27):
+            k = cv.waitKey(5) & 0xFF
+        cv.destroyAllWindows()
+    
 
 def testingHost():
     print("Begin")
-    image = cv.imread("images/playingCardImages/IMG_0108.jpg")
+    debug = True
+    image = cv.imread("images/playingCardImages/c2_0.JPG")
     # cv.imshow("Image", image)
-    valid, imgwarp = extract_card(image, output_fn="images/testOutput.png", debug=True)   
+    valid, imgwarp = extract_card(image, debug=debug)   
+    if not valid:
+        print("Card extraction invalid")
+    else:
+        corner_grab(imgwarp, debug=debug)
+    k=-1
+    while(k!=27):
+        k = cv.waitKey(5) & 0xFF
     cv.destroyAllWindows()
+
+# generateCardFiles()
+testingHost()
