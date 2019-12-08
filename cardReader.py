@@ -28,12 +28,20 @@ def load_images_from_folder(folder):
             names.append(filename)
     return images, names
 
+def find_videos_in_folder(folder):
+    paths = []
+    names = []
+    for filename in os.listdir(folder):
+        paths.append(os.path.join(folder, filename))
+        names.append(filename)
+    return paths, names
+
 # Global Variables
 #region
 ZOOM=4
 cardW = int(57 * ZOOM)
 cardH = int(87 * ZOOM)
-cornerXmin = int(2 * ZOOM)
+cornerXmin = int(1 * ZOOM)
 cornerXmax = int(10.5 * ZOOM)
 cornerYmin = int(2.5 * ZOOM)
 cornerYmax = int(23 * ZOOM)
@@ -185,11 +193,65 @@ def extract_card(frame, output_fn=None, min_focus=120, debug=False):
         
     return valid, imgwarp
 
-def corner_grab(extract, output_fn=None, debug=True):
-    cropped = extract[0:cornerYmax, 0:cornerXmax]
+def corner_grab(extract, corner=refCornerHL, output_fn=None, debug=True):
+    """
+    Extract a corner from a given card image
+    Taken from https://github.com/geaxgx/playing-card-detection/blob/master/creating_playing_cards_dataset.ipynb
+    Modified for my own use
+    """
+
+    kernel = np.ones((3,3),np.uint8)
+    corner=corner.astype(np.int)
+
+    x1=int(corner[0][0])
+    y1=int(corner[0][1])
+    x2=int(corner[2][0])
+    y2=int(corner[2][1])
+    w=x2-x1
+    h=y2-y1
+    cropped=extract[y1:y2,x1:x2].copy()
+    # cropped = extract[0:cornerYmax, 0:cornerXmax]
+    if debug: cv.imshow("Cropped", cropped)
+
+    # strange_cnt=np.zeros_like(cropped)
+    # gray=cv.cvtColor(cropped,cv.COLOR_BGR2GRAY)
+    # thld=cv.Canny(gray,30,200)
+    # # thld = cv.morphologyEx(thld, cv.MORPH_CLOSE, kernel)
+    # # thld = cv.dilate(thld,kernel,iterations=1)
+    # if debug: cv.imshow("thld",thld)
+
+    # cnts = cv.findContours(thld.copy(),cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
+    # min_area=30
+    # min_solidity=0.3
+    # concat_cnt = None
+
+    # ok=True
+    # for c in cnts:
+    #     print(cnts)
+    #     area=cv.contourArea(c)
+
+    #     hull=cv.convexHull(c)
+    #     hull_area = cv.contourArea(hull)
+    #     solidity = float(area)/hull_area
+    #     M=cv.moments(c)
+    #     cx=int(M['m10']/M['m00'])
+    #     cy=int(M['m01']/M['m00'])
+
+    #     if area >= min_area and abs(w/2-cx)<w*0.3 and abs(h/2-cy)<h*0.4 and solidity>min_solidity:
+    #         if debug:
+    #             cv.drawContours(cropped,[c],0,(255,0,0),-1)
+    #         if concat_cnt is None:
+    #             concat_cnt=c
+    #         else:
+    #             concat_cnt=np.concatenate((concat_cnt,c))
+    #     if debug and solidity <= min_solidity:
+    #         print("Solidity", solidity)
+    #         cv.drawContours(strange_cnt,[c],0,255,2)
+    #         cv.imshow("Strange contours", strange_cnt)
+    # cv.imshow("Cropped",cropped)
+
     if output_fn is not None:
         cv.imwrite(output_fn, cropped)
-    if debug: cv.imshow("Cropped", cropped)
 
 # Retrieve individual frames from a video input
 def video(cap):
@@ -265,19 +327,43 @@ def obtainCards(cap, useQR=True):
     cap.release()
     return cards_found
 
-def videoHost():
-    cap = cameraInit()
-    if cap == -1:
-        return -1
-    print(cap.get(18))
-    k=-1
-    while(k!=27):
-        ret, frame = cap.read()
-        k = cv.waitKey(5) & 0xFF
-        card_detection(frame)
-        cv.imshow('frame', frame)
-    #Close out the display window.
-    cv.destroyAllWindows()
+def videoHost(vid_file="images/cardVids/c2_0.MOV", debug=True):
+    frames=[]
+    cap = cv.VideoCapture(vid_file)
+    if not cap.isOpened:
+        print('Unable to open video')
+        exit(0)
+    print("Opened!")
+    hasFrame, frame = cap.read()
+    if not hasFrame:
+        print("No frames to find")
+    while(hasFrame):
+        if debug: cv.imshow("Initial frame", frame)
+        valid, imgwarp = extract_card(frame, min_focus=60, debug=debug)
+        if valid: 
+            frames.append(imgwarp)
+        # k=-1
+        # while(k!=27):
+        #     k = cv.waitKey(5) & 0xFF
+        # cv.destroyAllWindows()
+        hasFrame, frame = cap.read()
+    if debug:
+        print(len(frames))
+        cv.destroyAllWindows()
+    cap.release()
+    return frames
+    
+def generate_from_vids(folder="images/cardVids", output_folder="images/vidFrames"):
+    paths, names = find_videos_in_folder(folder)
+    for i in range(len(names)):
+        print(names[i][:2])
+        cards = videoHost(paths[i], debug=False)
+        for j in range(len(cards)):
+            file_name = output_folder + "/" + names[i][:-4] + "_" + str(j) + ".png"
+            print(file_name)
+            corner_grab(cards[j], output_fn=file_name, debug=False)
+
+
 
 def generateCardFiles(debug=False):
     if debug: print("Loading images")
@@ -306,10 +392,14 @@ def testingHost():
         print("Card extraction invalid")
     else:
         corner_grab(imgwarp, debug=debug)
-    k=-1
-    while(k!=27):
-        k = cv.waitKey(5) & 0xFF
-    cv.destroyAllWindows()
 
 # generateCardFiles()
-testingHost()
+# testingHost()
+# frames = videoHost()
+# cv.imshow("Frame", frames[0])
+
+# k=-1
+# while(k!=27):
+#     k = cv.waitKey(5) & 0xFF
+# cv.destroyAllWindows()
+generate_from_vids()
